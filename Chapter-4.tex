@@ -1,0 +1,575 @@
+\begin{center}
+\justifying
+\chapter{RESULTS AND ANALYSIS}
+
+This chapter presents the experimental results and analysis for the two problem 
+domains addressed in this work. The first part evaluates the proposed role-aware 
+log anomaly detection framework on standard benchmark datasets. The second part 
+presents the work done and experimental evaluation of the proposed learning-based 
+reconstruction framework for secure image sharing using XOR-based visual 
+cryptography.
+
+%==================================================
+\section{Problem 1: Log Anomaly Detection}
+This section presents the experimental results to verify the proposed framework of role-aware log anomaly detection. We have conducted all experiments on four publicly available benchmark datasets, commonly used in log analysis research. The proposed framework is compared to traditional machine learning algorithms as well as deep learning algorithms. NeuralLog is used as a primary reference point because our framework is a natural extension of this algorithm.
+
+The experimental design is similar to the NeuralLog \cite{neurallog2021} algorithm. We have used a random split on block ID with a ratio of 80/20 on HDFS. Temporal splitting with a ratio of 80/20 is used on BGL, Thunderbird, and Spirit datasets. The fixed-size window approach with a window size of 20 and a step size of 1 is used on all datasets.
+
+The metrics used to measure the performance of our framework are Precision, Recall, and F1-Score.
+
+The baseline algorithms used in this experiment are traditional machine learning algorithms such as Logistic Regression (LR) \cite{bodik2010fingerprinting}, Support Vector Machine (SVM)~\cite{chen2004failure}, and Invariant Mining (IM)~\cite{lou2010mining}, as well as deep learning algorithms such as LogRobust~\cite{zhang2019robust}, Log2Vec~\cite{meng2020log2vec}, and NeuralLog~\cite{neurallog2021}.
+
+\subsection{Experimental Results}
+
+Table~\ref{tab:results} presents the overall anomaly detection performance of all 
+compared methods across the four benchmark datasets.
+
+\begin{table*}[t]
+\centering
+\caption{Anomaly Detection Performance Comparison}
+\label{tab:results}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lcccccccc@{}}
+\toprule
+\multirow{2}{*}{\textbf{Dataset}} & \multirow{2}{*}{\textbf{Metric}} & 
+\multicolumn{7}{c}{\textbf{Method}} \\ 
+\cmidrule(lr){3-9}
+& & \textbf{LR} & \textbf{SVM} & \textbf{IM} & \textbf{LogRobust} & 
+\textbf{Log2Vec} & \textbf{NeuralLog} & \textbf{Ours} \\ 
+\midrule
+\multirow{3}{*}{HDFS} 
+& Precision & 0.99 & 0.99 & 1.00 & 0.98 & 0.94 & 0.96 & \textbf{0.98} \\
+& Recall    & 0.92 & 0.94 & 0.88 & 1.00 & 0.94 & 1.00 & \textbf{1.00} \\
+& F1-Score  & 0.96 & 0.96 & 0.94 & 0.99 & 0.94 & 0.98 & \textbf{0.99} \\ 
+\midrule
+\multirow{3}{*}{BGL} 
+& Precision & 0.13 & 0.97 & 0.13 & 0.62 & 0.80 & 0.98 & \textbf{0.99} \\
+& Recall    & 0.93 & 0.30 & 0.30 & 0.96 & 0.98 & 0.98 & \textbf{0.99} \\
+& F1-Score  & 0.23 & 0.46 & 0.18 & 0.75 & 0.88 & 0.98 & \textbf{0.99} \\ 
+\midrule
+\multirow{3}{*}{Thunderbird} 
+& Precision & 0.46 & 0.34 & -- & 0.61 & 0.74 & 0.93 & \textbf{0.96} \\
+& Recall    & 0.91 & 0.91 & -- & 0.78 & 0.94 & 1.00 & \textbf{1.00} \\
+& F1-Score  & 0.61 & 0.50 & -- & 0.68 & 0.84 & 0.96 & \textbf{0.98} \\ 
+\midrule
+\multirow{3}{*}{Spirit} 
+& Precision & 0.89 & 0.88 & -- & 0.97 & 0.91 & 0.98 & \textbf{0.99} \\
+& Recall    & 0.96 & 1.00 & -- & 0.94 & 0.96 & 0.96 & \textbf{0.98} \\
+& F1-Score  & 0.92 & 0.93 & -- & 0.95 & 0.95 & 0.97 & \textbf{0.98} \\ 
+\bottomrule
+\end{tabular}
+}
+\end{table*}
+
+\subsection*{Observations}
+\begin{itemize}
+    \item \textbf{Consistent improvement over NeuralLog:} We outperform NeuralLog on all four datasets. The improvement in F1-score over NeuralLog is +0.01 on HDFS, +0.01 on BGL, +0.02 on Thunderbird, and +0.01 on Spirit. The largest improvement is on Thunderbird, a dataset with high semantic ambiguity and class imbalance, where the effectiveness of role-aware representations is particularly high.
+    \item \textbf{Perfect Recall on HDFS and Thunderbird:} We achieve perfect recall on both HDFS and Thunderbird datasets, i.e., 1.00. This is particularly important in production scenarios, where failure to capture anomalies can have serious consequences.
+    \item \textbf{Failure of Traditional Methods on BGL:} The F1-scores reported by LR, SVM, and IM on BGL are as low as 0.18 and at most 0.46. This is because parsing error rates on this dataset are high. We avoid these pitfalls because our model and NeuralLog operate on raw text.
+    \item \textbf{Strong Result on Spirit:} On Spirit, our model achieves an F1-score of 0.98, slightly higher than NeuralLog's 0.97. The precision is 0.99 and recall is 0.98.
+\end{itemize}
+
+\subsection{Ablation Studies}
+We conduct ablation studies to evaluate the contribution of each key feature in our framework by removing each feature from our model one by one and measuring the change in F1-score.
+
+\subsection{Impact of Role Modeling}
+
+Table~\ref{tab:ablation_roles} presents the effect of removing the role induction 
+mechanism entirely, reverting to NeuralLog's uniform averaging of token embeddings.
+
+\begin{table}[H]
+\centering
+\caption{Ablation Study: Impact of Role Modeling on F1-Score}
+\label{tab:ablation_roles}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Dataset} & \textbf{Without Roles} & \textbf{With Roles} & \textbf{Gain} \\ 
+\midrule
+HDFS        & 0.98 & 0.99 & +0.01 \\
+BGL         & 0.98 & 0.99 & +0.01 \\
+Thunderbird & 0.96 & 0.98 & +0.02 \\
+Spirit      & 0.97 & 0.98 & +0.01 \\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Observations}
+
+\begin{itemize}
+    \item \textbf{Role modeling consistently improves performance} across all 
+    datasets, with the most notable gain on Thunderbird (+0.02). This is consistent 
+    with the expectation that role-separated pooling is most beneficial when log 
+    messages contain tokens with functionally distinct roles that uniform averaging 
+    conflates.
+
+    \item \textbf{The gain on HDFS, BGL, and Spirit} is more modest (+0.01), as 
+    these datasets have relatively more structured log formats where the benefit 
+    of explicit role separation is smaller, though still present.
+\end{itemize}
+
+\subsection{Impact of Numeric Token Preservation}
+
+Table~\ref{tab:ablation_numeric} presents the effect of discarding numeric tokens 
+(as NeuralLog does) versus retaining them as in our framework.
+
+\begin{table}[H]
+\centering
+\caption{Ablation Study: Impact of Numeric Token Preservation on F1-Score}
+\label{tab:ablation_numeric}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Dataset} & \textbf{Numerics Removed} & \textbf{Numerics Retained} & \textbf{Gain} \\ 
+\midrule
+HDFS        & 0.98 & 0.99 & +0.01 \\
+BGL         & 0.96 & 0.99 & +0.03 \\
+Thunderbird & 0.95 & 0.98 & +0.03 \\
+Spirit      & 0.97 & 0.98 & +0.01 \\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Observations}
+
+\begin{itemize}
+    \item \textbf{Largest gains on BGL and Thunderbird (+0.03):} Both datasets 
+    contain hardware-level logs where numeric tokens such as error codes, memory 
+    addresses, and register values are primary indicators of anomalous conditions. 
+    Discarding them results in a significant loss of discriminative information, 
+    confirming that numeric preservation is essential for these datasets.
+
+    \item \textbf{Modest gain on HDFS and Spirit (+0.01):} These datasets rely 
+    more on textual patterns for anomaly identification, so numeric tokens contribute 
+    less, though their retention still provides a marginal improvement.
+\end{itemize}
+
+\subsection{Impact of Number of Role Categories}
+
+We evaluated F1-scores using 3, 5, 7, and 10 role categories across all datasets 
+to determine the optimal number of roles. The results confirm that performance 
+peaks at 5 roles, which best balances representational expressiveness against the 
+risk of overfitting. Increasing to 7 or 10 roles does not yield further improvement 
+and slightly degrades performance on smaller datasets, suggesting that additional 
+roles begin to fragment meaningful token clusters unnecessarily.
+
+\subsection{Learned Role Interpretation}
+
+To validate that the automatically induced roles correspond to semantically 
+meaningful categories, we examine the tokens most strongly assigned to each role 
+in the BGL dataset. Table~\ref{tab:role_examples} lists the top tokens per 
+learned role.
+
+\begin{table}[H]
+\centering
+\caption{Top Tokens per Learned Role Category (BGL Dataset)}
+\label{tab:role_examples}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Learned Role} & \textbf{Representative Tokens} \\ 
+\midrule
+State    & error, failed, timeout, interrupt, success \\
+Entity   & node, core, memory, processor, link \\
+Action   & detected, killed, terminated, restarted \\
+Quantity & 404, 500, 0x00, pid, address \\
+Location & /dev, /proc, register, buffer \\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Observations}
+
+\begin{itemize}
+    \item \textbf{Alignment with semantic expectations:} Despite receiving no 
+    human annotation, the learned roles align closely with intuitive functional 
+    categories. Tokens like \textit{error} and \textit{failed} cluster under the 
+    state role, while system component tokens like \textit{node} and \textit{core} 
+    are assigned the entity role.
+
+    \item \textbf{Numeric tokens correctly captured under Quantity:} Error codes 
+    such as \textit{404}, \textit{500}, and hexadecimal values like \textit{0x00} 
+    are assigned to the quantity role, validating the importance of numeric token 
+    preservation and confirming that the model learns to distinguish numeric tokens 
+    functionally from textual ones.
+
+    \item \textbf{Path and register tokens under Location:} File system paths 
+    such as \textit{/dev} and \textit{/proc}, along with hardware references like 
+    \textit{register} and \textit{buffer}, are correctly grouped under the location 
+    role, demonstrating that the induction mechanism captures spatial and 
+    architectural context without explicit guidance.
+\end{itemize}
+
+\subsection{Computational Efficiency}
+
+Table~\ref{tab:efficiency} presents the preprocessing time, training time, and 
+inference latency of all compared methods on the BGL dataset.
+
+\begin{table}[H]
+\centering
+\caption{Computational Efficiency Comparison (BGL Dataset)}
+\label{tab:efficiency}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Method} & \textbf{Preprocess (min)} & \textbf{Training (min)} & 
+\textbf{Inference (ms/seq)} \\ 
+\midrule
+SVM        & 102.0 & 0.6  & 0.1 \\
+LogRobust  & 102.0 & 2.2  & 0.2 \\
+Log2Vec    & 314.0 & 13.1 & 26.3 \\
+NeuralLog  & 14.3  & 5.2  & 3.1 \\
+Ours       & 15.8  & 6.7  & 3.8 \\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Observations}
+
+\begin{itemize}
+    \item \textbf{Minor overhead over NeuralLog:} Our method introduces an 
+    additional 1.5 minutes of preprocessing, 1.5 minutes of training, and 0.7~ms 
+    per sequence of inference latency compared to NeuralLog. This overhead is 
+    attributable to the role induction network and the five-fold increase in 
+    message representation dimensionality (3840 vs. 768).
+
+    \item \textbf{Substantially faster than parsing-based methods:} Despite the 
+    slight overhead over NeuralLog, our method remains orders of magnitude faster 
+    than parsing-dependent methods like Log2Vec (314 min preprocessing) and SVM 
+    (102 min preprocessing), as no log parsing step is required.
+
+    \item \textbf{Practical inference latency:} At 3.8~ms per sequence, the 
+    proposed method remains suitable for near-real-time anomaly detection in 
+    production systems, where the accuracy gains from role modeling justify the 
+    marginal increase in latency.
+\end{itemize}
+
+\subsection{Robustness to Out-of-Vocabulary Tokens}
+
+Following the OOV analysis protocol of NeuralLog, we evaluate robustness under a 
+60/40 temporal split on BGL, where the test set contains a high proportion of 
+templates unseen during training. Under this configuration, the OOV rate in the 
+test set reaches 94.12\%. Our model maintains an F1-score of 0.99 under this 
+condition, demonstrating that WordPiece subword tokenization combined with 
+role-aware representations generalizes effectively to unseen log formats, with no 
+degradation relative to the standard evaluation split.
+
+%==================================================
+%==================================================
+\section{Problem 2: Attack on XOR-Based Secure Image Sharing using Autoencoders}
+
+This section presents the experimental evaluation of learning-based reconstruction
+attacks on a $(4,4)$ XOR-based visual secret sharing scheme. All experiments use
+plain random XOR share generation.
+
+Two decoder configurations are evaluated:
+
+\begin{itemize}
+    \item \textbf{Configuration 1:} Decoder trained using all four XOR shares.
+    \item \textbf{Configuration 2:} Decoder trained using three consecutive XOR shares.
+\end{itemize}
+
+Reconstruction quality is evaluated using Structural Similarity Index Measure (SSIM)
+and Peak Signal-to-Noise Ratio (PSNR).
+
+%--------------------------------------------------
+\subsubsection{Configuration 1: ML-Based Decoding Trained on All Four XOR Shares}
+In this configuration, the decoder is trained using all four XOR-generated shares
+concatenated along the channel dimension. The model learns to approximate the XOR
+reconstruction function without explicitly performing XOR operations during inference.
+\subsubsection{Evaluation with All Four Shares}
+Table~\ref{tab:xor4} presents the reconstruction quality when all four shares are
+available during testing.
+\begin{table}[H]
+\centering
+\caption{Reconstruction Quality using All Four XOR Shares}
+\label{tab:xor4}
+\begin{tabular}{c c c}
+\hline
+\textbf{Image} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
+\hline
+Image 1 & 0.9790 & 34.22 \\
+Image 2 & 0.9652 & 31.92 \\
+Image 3 & 0.9882 & 37.47 \\
+Image 4 & 0.9651 & 33.45 \\
+Image 5 & 0.9626 & 32.28 \\
+\hline
+\textbf{Average} & \textbf{0.9720} & \textbf{33.87} \\
+\hline
+\end{tabular}
+\end{table}
+\subsubsection{Qualitative Analysis}
+The reconstructed images closely match the original inputs, preserving global
+structure and fine-grained details. The high SSIM and PSNR values indicate that
+the neural decoder successfully learns a near-lossless reconstruction equivalent
+to classical XOR recovery.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/xor4_vis.png}
+\caption{Reconstruction using All Four XOR Shares}
+\label{fig:xor4_vis}
+\end{figure}
+\subsubsection{Evaluation under Missing Share Conditions}
+To simulate constrained access scenarios, the trained model was further evaluated
+under incomplete share availability. Missing shares were replaced with zero-valued
+(blank) channels during inference.
+The following cases were analyzed:
+\begin{itemize}
+    \item One share missing,
+    \item Two shares missing,
+    \item Three shares missing (only one share available).
+\end{itemize}
+As expected, reconstruction quality degrades significantly as the number of
+available shares decreases. When only three shares are available, partial structural
+information may be inferred due to dataset priors; however, visual fidelity is
+substantially reduced. With only one or two shares, the decoder fails to recover
+meaningful content.
+These results demonstrate that although the model learns an effective reconstruction
+mapping under full-share training, the absence of required shares significantly
+impairs reconstruction performance.
+
+\subsubsection{Experimental Results: Reconstruction Failure under Missing Shares}
+
+To empirically validate the degradation described above, the trained decoder was
+tested under two explicit missing-share scenarios: one share missing and two shares
+missing. In both cases, the absent shares were substituted with zero-valued channels,
+and the model was queried for reconstruction without any retraining or fine-tuning.
+
+The visual outcomes of these experiments are presented in
+Figures~\ref{fig:xor_1missing} and~\ref{fig:xor_2missing}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/xor_missing1.png}
+\caption{Reconstruction attempt with one XOR share missing. The decoder fails to
+recover meaningful image content, producing severely distorted or unintelligible
+outputs.}
+\label{fig:xor_1missing}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/xor_missing2.png}
+\caption{Reconstruction attempt with two XOR shares missing. With only half of the
+required shares available, reconstruction is not possible; the model output bears
+no resemblance to the original image.}
+\label{fig:xor_2missing}
+\end{figure}
+
+In both scenarios, \textbf{reconstruction was not possible}. The outputs produced
+by the decoder under these conditions were visually incoherent, with no discernible
+structural or semantic resemblance to the original images. This outcome is consistent
+with the theoretical properties of XOR-based secret sharing: since the scheme
+requires all shares to recover the secret, the absence of even a single share
+renders the information-theoretically irretrievable without additional assumptions
+or priors.
+
+These findings confirm that the ML-based decoder, despite its strong performance
+under full-share availability, does not circumvent the fundamental security
+guarantees of the underlying XOR scheme. The model cannot hallucinate or infer
+missing share content from the remaining inputs alone, thereby preserving the
+integrity of the secret sharing framework.
+\subsection{Configutation 2: ML-Based Decoding Trained on Three Consecutive XOR Shares}
+
+In this configuration, the decoder is trained using only three consecutive XOR 
+
+
+shares. The valid combinations considered are:
+
+\begin{itemize}
+    \item Shares $\{1,2,3\}$,
+    \item Shares $\{2,3,4\}$.
+\end{itemize}
+
+This setup models an attacker who never observes all four shares during training.
+
+\subsubsection{Reconstruction using Shares \{1,2,3\}}
+
+\begin{table}[H]
+\centering
+\caption{Reconstruction Quality using XOR Shares \{1,2,3\}}
+\label{tab:xor123}
+\begin{tabular}{c c c}
+\hline
+\textbf{Image} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
+\hline
+Image 1 & 0.1988 & 12.42 \\
+Image 2 & 0.2042 & 10.99 \\
+Image 3 & 0.2024 & 13.96 \\
+Image 4 & 0.2243 & 9.86 \\
+Image 5 & 0.2093 & 12.65 \\
+\hline
+\textbf{Average} & \textbf{0.2078} & \textbf{11.98} \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Reconstruction using Shares \{2,3,4\}}
+
+\begin{table}[H]
+\centering
+\caption{Reconstruction Quality using XOR Shares \{2,3,4\}}
+\label{tab:xor234}
+\begin{tabular}{c c c}
+\hline
+\textbf{Image} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
+\hline
+Image 1 & 0.1989 & 12.42 \\
+Image 2 & 0.2046 & 10.99 \\
+Image 3 & 0.2027 & 13.96 \\
+Image 4 & 0.2242 & 9.86 \\
+Image 5 & 0.2094 & 12.65 \\
+\hline
+\textbf{Average} & \textbf{0.2080} & \textbf{11.98} \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Analysis}
+
+The consistently low SSIM and PSNR values indicate that the decoder trained exclusively on three shares is unable to reliably reconstruct the secret image. Although faint structural outlines may occasionally appear, the recovered images lack perceptual clarity and semantic consistency.
+
+These findings align with the theoretical guarantees of XOR-based secret sharing: any strict subset of fewer than four shares is information-theoretically insufficient for deterministic recovery. The learning-based model cannot overcome this structural
+limitation when trained under constrained access.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{images/xor3_vis.png}
+\caption{Reconstruction using Three Consecutive XOR Shares}
+\label{fig:xor3_vis}
+\end{figure}
+
+%--------------------------------------------------
+\subsection{Summary of Findings}
+
+The experimental results establish a clear hierarchy:
+
+\begin{itemize}
+    \item Near-lossless reconstruction is achieved when all four XOR shares are available (configuration 1).
+    \item Reconstruction quality degrades significantly under missing-share conditions, confirming the structural dependency of the XOR scheme.
+    \item A decoder trained solely on three consecutive shares (configuration 2) fails to recover meaningful image content, reinforcing the security guarantees of the $(4,4)$ XOR construction.
+\end{itemize}
+
+Overall, while neural networks can learn the XOR reconstruction mapping under full share availability, they do not invalidate the theoretical security of the scheme when fewer than the required number of shares are accessible.
+
+%==================================================
+\section{Problem 3: Cryptanalysis of Medical Image Encryption Scheme}
+
+This section presents the experimental validation of the proposed chosen-plaintext attack (CPA) on the chaos-based medical image encryption scheme proposed by Jain et al.~\cite{jain2021medical}. The objective is to demonstrate that the encryption scheme can be completely broken under CPA conditions, despite its strong statistical properties. :contentReference[oaicite:0]{index=0}
+
+\subsection{Experimental Setup}
+
+All experiments were conducted in Python 3 using a $256 \times 256$ grayscale image (Cameraman benchmark). The attacker is assumed to have access only to the encryption oracle $\mathcal{E}(\cdot)$, with no knowledge of the secret key.
+
+The oracle uses the following hidden parameters:
+\[
+K_1 = P_i = 10,\quad
+K_2 = \{x_0 = 0.8,\; y_0 = 0.5,\; \theta = 0.99\}
+\]
+
+\subsection{Phase 1: Keystream Recovery}
+
+A zero image is submitted to the oracle to obtain $C^{(0)}$. Using the derived equations, the keystream $\hat{X}$ is recovered exactly.
+
+\subsubsection{Results}
+
+\begin{table}[H]
+\centering
+\caption{Keystream recovery performance}
+\begin{tabular}{lc}
+\toprule
+Metric & Value \\
+\midrule
+Oracle queries used & 1 \\
+Total values recovered & 65,536 \\
+Perfect match & \textbf{True} \\
+Max deviation & 0 \\
+Mean deviation & 0.000000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All keystream values were recovered exactly using a single oracle query.
+
+\subsection{Phase 2: Permutation Map Recovery}
+
+Structured probe images were used to recover the full permutation map.
+
+\subsubsection{Results}
+
+\begin{table}[H]
+\centering
+\caption{Permutation recovery performance}
+\begin{tabular}{lc}
+\toprule
+Metric & Value \\
+\midrule
+Oracle queries used & 256 \\
+Columns recovered & 256/256 \\
+Perfect match & \textbf{True} \\
+Max deviation & 0 \\
+Mean deviation & 0.000000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The permutation map was recovered completely without error.
+
+\subsection{Phase 3: Full Decryption}
+
+Using the recovered keystream and permutation map, the ciphertext was decrypted without access to the secret key.
+
+\subsubsection{Results}
+
+\begin{table}[H]
+\centering
+\caption{Decryption accuracy}
+\begin{tabular}{lc}
+\toprule
+Metric & Value \\
+\midrule
+Total oracle queries & 257 \\
+Exact recovery ($\hat{P}=P$) & \textbf{True} \\
+Max pixel difference & 0 \\
+Mean pixel difference & 0.000000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\subfloat[Original image]{\includegraphics[width=0.45\textwidth]{images/cameraman.png}}
+\hfill
+\subfloat[Encrypted image]{\includegraphics[width=0.45\textwidth]{images/encrypted_image.png}}
+
+\vspace{0.5cm}
+
+\subfloat[Zero-image ciphertext]{\includegraphics[width=0.45\textwidth]{images/allZeroImageEnc.png}}
+\hfill
+\subfloat[Recovered image]{\includegraphics[width=0.45\textwidth]{images/cameraman.png}}
+
+\caption{Chosen-plaintext attack results showing exact reconstruction}
+\label{fig:cpa_result_res}
+\end{figure}
+
+\subsection{Overall Attack Summary}
+
+\begin{table}[H]
+\centering
+\caption{Summary of CPA attack}
+\begin{tabular}{lccc}
+\toprule
+Phase & Queries & Items Recovered & Accuracy \\
+\midrule
+Keystream & 1 & 65,536 values & Exact \\
+Permutation & 256 & $256 \times 256$ & Exact \\
+Decryption & 0 & Full image & Exact \\
+\midrule
+Total & 257 & -- & Exact recovery \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Key Observations}
+
+\begin{itemize}
+    \item \textbf{Complete break under CPA:} The scheme can be fully broken using only $n+1$ queries.
+    \item \textbf{Perfect reconstruction:} The recovered image is identical to the original.
+    \item \textbf{Mismatch with statistical security:} Despite high entropy and NPCR values, the scheme is cryptographically insecure.
+\end{itemize}

@@ -1,0 +1,69 @@
+\begin{center}
+\textbf{{\Large ABSTRACT}}\\
+\begin{center}
+\justifying
+Log-based anomaly detection is a critical component of ensuring the reliability 
+and security of large-scale software systems. Modern systems generate terabytes 
+of log data daily, making automated detection of abnormal patterns essential for 
+rapid incident response and failure prevention. Existing parsing-free methods such 
+as NeuralLog have advanced the state of the art by eliminating dependency on brittle 
+log parsers through BERT-based encoding of raw log text. However, these methods 
+treat all tokens uniformly through simple averaging of contextual embeddings, 
+discarding the structural organization of log messages, and remove numeric tokens 
+that carry critical anomaly signals such as HTTP error codes and hardware identifiers. 
+This project proposes a novel role-aware representation learning framework that 
+addresses these limitations by inducing latent token roles — state, entity, action, 
+quantity, and location — automatically from sequence-level anomaly labels, without 
+any manual annotation or log parsing. A role induction network assigns a soft 
+probability distribution over five role categories to each token, and role-aware 
+pooling constructs structured message representations that preserve both semantic 
+and structural information. Numeric tokens are explicitly retained to capture 
+quantitative anomaly indicators. The framework is evaluated on four public benchmark 
+datasets — HDFS, BGL, Thunderbird, and Spirit — achieving F1-scores of 0.98--0.99 
+and consistently outperforming NeuralLog and all baseline methods. Ablation studies 
+confirm that both role modeling and numeric token preservation contribute 
+independently to the observed improvements. The learned token roles align with 
+semantic expectations despite being induced solely from anomaly labels, providing 
+an interpretable basis for anomaly attribution with negligible computational 
+overhead over NeuralLog.
+
+The second objective of this project investigates the vulnerability of XOR-based 
+secret image sharing schemes to learning-based reconstruction attacks using 
+autoencoders. Classical $n$-out-of-$n$ XOR schemes provide information-theoretic 
+security against adversaries holding strict subsets of shares; however, their 
+resilience against data-driven models that exploit learned image priors remains 
+largely unexplored. This work proposes an encoder--decoder autoencoder framework 
+that attempts to reconstruct a secret image from a constrained consecutive subset 
+of its XOR-generated shares, without access to cryptographic keys or the remaining 
+shares. The model leverages convolutional feature extraction and skip connections 
+to recover structural content from the partial observations available to an attacker. 
+Reconstruction fidelity is evaluated using PSNR and SSIM across multiple benchmark 
+image datasets. Experimental results show that while meaningful reconstruction is 
+possible when all shares are available, reconstruction fails under missing-share 
+conditions, thereby preserving the theoretical security guarantees of the XOR scheme 
+in practical settings.
+
+The third objective of this project focuses on the cryptanalysis of a chaos-based 
+medical image encryption scheme under the chosen-plaintext attack (CPA) model. 
+The target scheme employs a permutation-diffusion architecture using Arnold's Cat 
+Map and a Two-Dimensional Logistic Sine Coupling Map (2D-LSCM). Through structural 
+analysis, this work demonstrates that the keystream used in the diffusion stage is 
+independent of the plaintext, allowing it to be recovered exactly using a single 
+chosen input. Furthermore, the separability of permutation and diffusion stages 
+enables complete reconstruction of the permutation mapping using structured probe 
+images. By combining these results, the entire encryption process can be inverted 
+without knowledge of the secret key. Experimental validation confirms that the 
+attack requires only $n+1$ oracle queries for an $n \times n$ image and achieves 
+exact plaintext recovery with zero error. These findings reveal fundamental 
+weaknesses in chaos-based encryption designs and highlight that statistical measures 
+such as entropy and NPCR are insufficient indicators of cryptographic security.
+
+\end{center}
+\end{center}
+
+\keywords{Log Anomaly Detection, Role-Aware Representation Learning, Token Role 
+Induction, BERT, Parsing-Free Log Analysis, Deep Learning, Transformer, 
+Representation Learning, Visual Cryptography, Secret Image Sharing, XOR Secret 
+Sharing, Autoencoder, Reconstruction Attack, Adversarial Machine Learning, 
+Image Security, Chaos-Based Encryption, Cryptanalysis, Chosen-Plaintext Attack}\\
+\clearpage

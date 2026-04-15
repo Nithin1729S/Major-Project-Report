@@ -1,0 +1,297 @@
+\chapter{PRELIMINARIES}
+\justifying
+
+This chapter introduces the foundational concepts and theoretical background required to understand the methodologies developed in this project. Each concept is explained from first principles before presenting the formal mathematical notation. The three main areas covered are: log-based anomaly detection, secret image sharing, and cryptanalysis of image encryption schemes.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Log-Based Anomaly Detection}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{What are System Logs?}
+
+Every time a software application or operating system performs an operation — starting a service, handling a request, encountering an error — it records a brief textual message called a \textbf{log entry}. These messages form a continuously growing record of the system's behavior known as a \textbf{system log}. For example, a web ikserver might produce entries such as:
+
+\begin{quote}
+\texttt{[INFO] Connection established from 192.168.1.1} \\
+\texttt{[ERROR] Disk write failed: no space left on device} \\
+\texttt{[WARN] Authentication attempt failed for user: admin}
+\end{quote}
+
+When a system is behaving normally, its logs follow recognizable, repetitive patterns. When something goes wrong — a hardware failure, a security breach, or a software bug — the log patterns deviate from the norm. \textbf{Anomaly detection} is the task of automatically identifying these deviations.
+
+\subsection{Formal Representation}
+
+Formally, each log message $m$ is treated as a sequence of tokens (words or sub-word units):
+\[
+m = \{ w_1,\, w_2,\, \dots,\, w_T \}
+\]
+where $T$ is the number of tokens in the message and $w_i$ denotes the $i^{\text{th}}$ token. A \textbf{log sequence} $S$ is a collection of $L$ consecutive log messages observed within a time window:
+\[
+S = \{ m_1,\, m_2,\, \dots,\, m_L \}
+\]
+
+The anomaly detection task is formulated as a \textbf{binary classification} problem. Given a sequence $S$, a detection function $f$ must assign it a label:
+\[
+f(S) \;\rightarrow\; \{0,\,1\}
+\]
+where $0$ denotes \emph{normal} behavior and $1$ denotes \emph{anomalous} behavior. The goal is to \emph{learn} $f$ from historical data so that it generalizes to unseen log sequences.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Token Embedding and Representation Learning}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Why Embeddings?}
+
+Machine learning models operate on numbers, not raw text. An \textbf{embedding} is a way of mapping each word or token to a dense numerical vector so that tokens with similar meanings end up close together in vector space. For instance, the tokens \texttt{``error''} and \texttt{``failure''} would ideally have similar vector representations, whereas \texttt{``error''} and \texttt{``timestamp''} would be far apart.
+
+\subsection{Formal Definition}
+
+Each token $w_i$ is mapped to a continuous vector:
+\[
+e_i = \text{Embed}(w_i) \;\in\; \mathbb{R}^d
+\]
+where $d$ is the \textbf{embedding dimension} (a hyperparameter, commonly 128 or 256). The full message is then represented as the ordered set of its token vectors:
+\[
+M = \{ e_1,\, e_2,\, \dots,\, e_T \}
+\]
+
+\subsection{Role-Aware Modeling}
+
+Log messages have an internal structure. Within a single message, different tokens play different \emph{roles}: some tokens are keywords (e.g., \texttt{INFO}, \texttt{ERROR}), others are identifiers (e.g., a process ID), and others are numeric values (e.g., a port number). \textbf{Role-aware modeling} explicitly encodes these structural roles alongside the token content, which has been shown to improve the quality of the learned representations.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Self-Attention Mechanism}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Intuition}
+
+Not every token in a log message is equally important for understanding every other token. Consider the message: \texttt{``User admin login failed at port 22.''}  To understand why \texttt{``failed''} is significant, the model needs to pay attention to \texttt{``login''}, not just to adjacent words. The \textbf{self-attention mechanism} allows each token to dynamically focus on — or ``attend to'' — the other tokens that are most relevant to it, regardless of their distance in the sequence.
+
+\subsection{Query, Key, and Value Projections}
+
+For each token embedding $e_i$, three separate linear projections are computed using learned weight matrices $W_Q$, $W_K$, and $W_V$:
+
+\begin{align*}
+Q_i &= W_Q\, e_i \quad \text{(Query: what this token is looking for)} \\
+K_i &= W_K\, e_i \quad \text{(Key: what this token has to offer)} \\
+V_i &= W_V\, e_i \quad \text{(Value: the actual content this token contributes)}
+\end{align*}
+
+Intuitively, the query of token $i$ is matched against the keys of all other tokens to decide how much attention to pay to each.
+
+\subsection{Computing Attention}
+
+The raw attention score between token $i$ and token $j$ is the dot product of their query and key vectors, scaled by $\sqrt{d}$ to prevent excessively large values in high dimensions:
+\[
+\text{Attention}(i,j) = \frac{Q_i\, K_j^{\top}}{\sqrt{d}}
+\]
+
+These raw scores are then converted to a probability distribution over all tokens using the \textbf{softmax} function, giving normalized attention weights:
+\[
+\alpha_{ij} = \frac{\exp\!\bigl(\text{Attention}(i,j)\bigr)}{\displaystyle\sum_{k=1}^{T} \exp\!\bigl(\text{Attention}(i,k)\bigr)}
+\]
+
+Note that $\alpha_{ij} \geq 0$ and $\sum_{j} \alpha_{ij} = 1$, so the weights behave like a probability distribution.
+
+\subsection{Contextual Representation}
+
+The final representation of token $i$ is a weighted sum of all value vectors, where tokens with higher attention weights contribute more:
+\[
+z_i = \sum_{j=1}^{T} \alpha_{ij}\, V_j
+\]
+
+The vector $z_i$ is called the \textbf{contextual representation} of token $i$ because it incorporates information from the entire sequence, weighted by relevance. This is fundamentally different from a plain embedding, which carries no information about surrounding context.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Secret Image Sharing}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{The Core Idea}
+
+Suppose a highly sensitive image — such as a medical scan or a classified photograph — needs to be stored across multiple servers. Storing the full image on any single server is risky: if that server is compromised, the secret is exposed. \textbf{Secret image sharing (SIS)} solves this by splitting the image into multiple pieces called \textbf{shares}, such that:
+
+\begin{itemize}
+    \item Any sufficiently large subset of shares can \emph{perfectly reconstruct} the original image.
+    \item Any smaller subset of shares reveals \emph{absolutely nothing} about the original image.
+\end{itemize}
+
+This is sometimes called a \textbf{threshold scheme}.
+
+\subsection{The $(k, n)$-Threshold Scheme}
+
+Formally, a $(k, n)$-threshold SIS scheme divides a secret image $S$ into $n$ shares:
+\[
+\{s_1,\, s_2,\, \ldots,\, s_n\}
+\]
+with the following guarantees:
+
+\begin{itemize}
+    \item \textbf{Reconstruction}: Any $k$ or more shares suffice to reconstruct $S$ exactly.
+    \item \textbf{Security}: Any collection of fewer than $k$ shares is statistically independent of $S$ — no information is leaked.
+\end{itemize}
+
+For example, in a $(3, 5)$ scheme, the secret is split into 5 shares distributed across 5 servers. Any 3 servers can collaborate to recover the secret, but any 2 servers (even acting together) learn nothing. This provides both \emph{redundancy} (against server failure) and \emph{security} (against server compromise).
+
+\subsection{Security Assumptions and Their Limitations}
+
+The information-theoretic security guarantee above assumes that shares are analyzed \emph{only} through classical combinatorial means. However, modern deep learning models can sometimes extract partial information by detecting subtle statistical patterns across shares — an assumption that this project explicitly tests and challenges.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Autoencoders}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{What is an Autoencoder?}
+
+An \textbf{autoencoder} is a neural network trained to reproduce its own input at the output. At first glance this seems trivial — why train a network to copy an input? The key insight is that the network is forced to pass the information through a \textbf{bottleneck}: a hidden layer with far fewer dimensions than the input. To reconstruct the input faithfully despite this bottleneck, the network is forced to learn a \emph{compact, meaningful representation} of the data.
+
+\begin{figure}[h]
+\centering
+\begin{minipage}{0.8\textwidth}
+\centering
+\texttt{Input $\xrightarrow{\text{Encoder}}$ Latent Code $\xrightarrow{\text{Decoder}}$ Reconstructed Output}
+\end{minipage}
+\end{figure}
+
+\subsection{Architecture}
+
+An autoencoder consists of five conceptual stages:
+
+\begin{enumerate}
+    \item \textbf{Input Layer}: Receives the raw data (e.g., a flattened image or a sequence of token embeddings).
+    \item \textbf{Encoder}: A stack of layers that progressively compresses the input into a lower-dimensional space. Each layer applies a learned linear transformation followed by a nonlinear activation function.
+    \item \textbf{Latent Space} (Bottleneck): The compressed representation $\mathbf{z}$ of the input. This is the most information-dense part of the network. A well-trained encoder maps semantically similar inputs to nearby points in latent space.
+    \item \textbf{Decoder}: A symmetric stack of layers that expands the latent code back to the original input dimensionality.
+    \item \textbf{Output Layer}: Produces the reconstructed input $\hat{x}$.
+\end{enumerate}
+
+\subsection{Training Objective}
+
+Autoencoders are trained in an \textbf{unsupervised} fashion — no labels are required. The training objective is to minimize the \textbf{reconstruction error} between the input $x$ and the output $\hat{x}$, typically measured by the Mean Squared Error (MSE):
+\[
+\mathcal{L}(x, \hat{x}) = \frac{1}{N} \sum_{i=1}^{N} (x_i - \hat{x}_i)^2
+\]
+where $N$ is the number of elements (e.g., pixels). In the context of this project, autoencoders are used to learn mappings from image shares back to the original secret image, thereby assessing whether the information-theoretic security of SIS schemes holds under deep learning attacks.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Image Quality Evaluation Metrics}
+% ─────────────────────────────────────────────────────────────────────────────
+
+To evaluate how faithfully a reconstructed image matches the original, two standard metrics are used.
+
+\subsection{Peak Signal-to-Noise Ratio (PSNR)}
+
+\textbf{PSNR} is derived from the MSE between the original and reconstructed images. It is expressed in decibels (dB) and measures the ratio of the maximum possible signal power to the power of the distortion (noise):
+\[
+\text{PSNR} = 10 \cdot \log_{10}\!\left(\frac{\text{peakval}^2}{\text{MSE}}\right)
+\]
+where $\text{peakval}$ is the maximum pixel value (255 for 8-bit images). A \textbf{higher PSNR} means the reconstruction is closer to the original. Typical values above 30 dB are considered good quality, while values below 20 dB indicate significant degradation.
+
+\subsection{Structural Similarity Index Measure (SSIM)}
+
+MSE and PSNR treat each pixel independently, which does not always align with human visual perception. \textbf{SSIM} addresses this by comparing images along three perceptual dimensions simultaneously: \emph{luminance} (overall brightness), \emph{contrast} (variation in brightness), and \emph{structure} (spatial patterns of pixel intensities). The result is a score in the range $[0, 1]$:
+
+\begin{itemize}
+    \item A value of \textbf{1} indicates the two images are structurally identical.
+    \item A value of \textbf{0} indicates no structural similarity whatsoever.
+\end{itemize}
+
+SSIM is preferred over PSNR when perceptual quality is important, since two images can have the same MSE but look very different to a human observer.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Chaos-Based Image Encryption}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Motivation}
+
+Medical images and other sensitive visual data must be protected before transmission or storage. Classical block ciphers (such as AES) operate on byte streams and do not exploit the spatial structure of images. \textbf{Chaos-based encryption} offers an alternative: it uses the output of \emph{chaotic dynamical systems} — mathematical systems with deterministic but unpredictable, highly sensitive behavior — as keystreams to scramble image data.
+
+\subsection{Properties of Chaotic Systems Relevant to Cryptography}
+
+A chaotic system is characterized by the following properties that make it attractive for generating cryptographic material:
+
+\begin{itemize}
+    \item \textbf{Sensitivity to initial conditions}: Tiny changes in the starting state (even on the order of $10^{-15}$) lead to completely different trajectories. This means the generated sequence is practically unpredictable without knowledge of the exact initial conditions (the key).
+    \item \textbf{Ergodicity}: The system visits all regions of its state space over time, ensuring the generated sequence has good statistical coverage.
+    \item \textbf{Mixing property}: Nearby initial states quickly spread across the entire state space, contributing to diffusion of information.
+\end{itemize}
+
+\subsection{Permutation-Diffusion Architecture}
+
+A typical chaos-based image encryption scheme follows a two-phase structure:
+
+\begin{itemize}
+    \item \textbf{Permutation Phase}: The spatial positions of pixels are rearranged using a chaotic map. The content of each pixel remains unchanged, but its location is scrambled. This destroys spatial correlations between adjacent pixels.
+    \item \textbf{Diffusion Phase}: The intensity values of pixels are modified using a chaotic keystream, typically via XOR operations. This ensures that a single-pixel change in the plaintext cascades into changes throughout the ciphertext.
+\end{itemize}
+
+Together, permutation provides \emph{confusion} and diffusion provides \emph{spreading}, corresponding to Shannon's classical principles of cipher design.
+
+\subsection{Arnold's Cat Map}
+
+The \textbf{Arnold's Cat Map} is a classic area-preserving map used for pixel permutation. For an image of size $n \times n$, it maps each pixel at position $(x, y)$ to a new position $(x', y')$ as follows:
+\[
+\begin{pmatrix} x' \\ y' \end{pmatrix}
+=
+\begin{pmatrix} 1 & 1 \\ 1 & 2 \end{pmatrix}
+\begin{pmatrix} x \\ y \end{pmatrix}
+\bmod\, n
+\]
+
+Each application of this map shuffles the pixel positions in a deterministic but seemingly random manner. After a finite number of iterations, the map is periodic — the image returns to its original state — a property exploited both in encryption and in certain cryptanalytic attacks.
+
+\subsection{2D Logistic Sine Coupling Map (2D-LSCM)}
+
+The \textbf{2D Logistic Sine Coupling Map} is a more complex chaotic system designed to overcome the limited chaotic range of simple 1D maps. It generates two interdependent chaotic sequences $\{x_i\}$ and $\{y_i\}$ via:
+\[
+\begin{cases}
+x_{i+1} = \sin\!\bigl(\pi\bigl(4\theta\, x_i(1-x_i) + (1-\theta)\sin(\pi y_i)\bigr)\bigr) \\[6pt]
+y_{i+1} = \sin\!\bigl(\pi\bigl(4\theta\, y_i(1-y_i) + (1-\theta)\sin(\pi x_{i+1})\bigr)\bigr)
+\end{cases}
+\]
+where $\theta \in (0, 1)$ is a coupling parameter that controls the balance between the logistic and sine components. The coupling between the two sequences produces a larger and more uniform chaotic range than either component alone. The output sequences serve as keystreams for both permutation and diffusion in the encryption scheme.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Cryptanalysis of Image Encryption Schemes}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{What is Cryptanalysis?}
+
+\textbf{Cryptanalysis} is the science of analyzing encryption schemes to find weaknesses that allow an adversary to recover plaintext (or the key) without legitimate access to the secret key. In the context of image encryption, successful cryptanalysis means recovering the original image from its encrypted form.
+
+\subsection{Attack Models}
+
+Different attack models assume different levels of adversary capability. This project focuses primarily on the most powerful standard model:
+
+\subsubsection{Chosen-Plaintext Attack (CPA)}
+
+In a \textbf{Chosen-Plaintext Attack}, the adversary has access to an \emph{encryption oracle}: a black box that, given any image the adversary chooses, returns its encrypted version. Formally:
+\[
+C = \mathcal{E}(P)
+\]
+where $P$ is a chosen plaintext image and $C$ is the resulting ciphertext. The adversary selects plaintexts strategically to extract information about the key or the internal structure of the cipher. This is a standard model in modern cryptography — if a cipher cannot withstand a CPA, it is considered insecure.
+
+\subsection{Exploiting Structural Weaknesses}
+
+Many chaos-based image encryption schemes exhibit specific structural weaknesses that make them vulnerable to chosen-plaintext attacks. The two most common weaknesses are described below.
+
+\subsubsection{Keystream Recovery via All-Zero Images}
+
+If the diffusion phase XORs each pixel with a keystream value that is \emph{independent of the plaintext pixel values}, the keystream can be extracted trivially. By encrypting an all-zero image $P = \mathbf{0}$:
+\[
+C = \mathbf{0} \oplus K = K
+\]
+the ciphertext directly reveals the keystream $K$. This keystream can then be used to decrypt \emph{any} ciphertext encrypted with the same key.
+
+\subsubsection{Permutation Recovery via Structured Probe Images}
+
+If the permutation and diffusion phases are applied independently (i.e., the permutation does not depend on the pixel values), the permutation mapping can be recovered by encrypting specially crafted probe images. For instance, an image with exactly one non-zero pixel allows the adversary to observe where that pixel lands after permutation. By repeating this process, the full pixel permutation table can be reconstructed.
+
+\subsection{Necessary Conditions for Security Weakness}
+
+An encryption scheme is fully breakable under a CPA if:
+\begin{itemize}
+    \item The keystream used in diffusion is \textbf{static} (independent of the plaintext), allowing it to be extracted as shown above.
+    \item The permutation and diffusion operations are \textbf{independent} of each other and of the plaintext, allowing them to be recovered and reversed separately.
+\end{itemize}
+
+When both conditions hold, an adversary can first recover the keystream, then recover the permutation mapping, and thereby reconstruct any plaintext from its ciphertext with full accuracy. This forms the theoretical basis for the cryptanalysis methodology implemented in this project.
