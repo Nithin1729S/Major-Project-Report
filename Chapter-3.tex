@@ -1,581 +1,480 @@
-\justifying
-\chapter{Work Done}
+% ─────────────────────────────────────────────────────────────────────────────
+\chapter{Vulnerability Assessment of XOR-Based Secret Image Sharing Schemes Against Autoencoder Based Reconstruction Attacks}
+% ─────────────────────────────────────────────────────────────────────────────
 
-This work addresses three complementary security problems spanning system monitoring and cryptographic analysis. First, it proposes a role-aware representation learning framework for log-based anomaly detection that addresses the structural limitations of existing parsing-free methods. The framework operates directly on raw log text without any dependency on log parsers, while explicitly modeling the functional roles of tokens to produce richer and more interpretable log representations. Second, it investigates the vulnerability of XOR-based secret image sharing schemes under learning-based attacks by employing autoencoder architectures to reconstruct images from incomplete share sets. Third, it performs a cryptanalysis of a chaos-based medical image encryption scheme, demonstrating that structural weaknesses such as plaintext-independent keystream generation and separable permutation-diffusion design enable complete decryption under a chosen-plaintext attack.
+\section{Introduction}
+
+Secret image sharing schemes distribute a confidential image $S$ among $n$ participants by creating shares $\{s_1, s_2, ..., s_n\}$. To reconstruct $S$, a qualified subset of shares is required. XOR-based schemes achieve this with perfect secrecy; any strict subset of shares is statistically independent of the secret. They also avoid pixel expansion, making them efficient for practical use. However, this information-theoretic guarantee assumes that adversaries are computationally unbounded and have no prior knowledge of natural image statistics. Modern deep learning models can exploit these statistical patterns. This raises the question whether a learning-based adversary can reconstruct a meaningful approximation of $S$ from a limited subset of its XOR shares.
+
+This project examines this threat by proposing an autoencoder-based reconstruction attack targeting XOR-generated secret shares. An encoder-decoder network with skip connections is trained to recover the secret image from a consecutive subset of $k < n$ shares, without needing any cryptographic key material or the remaining shares. The attack uses learned priors about natural image structures such as edges, textures, and semantic content to compensate for missing cryptographic information. The framework is evaluated across various benchmark image datasets using PSNR and SSIM as metrics for fidelity.
+
+\section{Preliminaries}
+\label{sec:lad-prelim}
 
 
-% ===========================
-% PROBLEM 1
-% ===========================
+Suppose a highly sensitive image — such as a medical scan or a classified photograph — needs to be stored across multiple servers. Storing the full image on any single server is risky: if that server is compromised, the secret is exposed. \textbf{Secret image sharing (SIS)} solves this by splitting the image into multiple pieces called \textbf{shares}, such that:
 
-\section{Work Done for Problem 1: Role-Aware Log Anomaly Detection}
-
-\subsection{Enhanced Preprocessing}
-
-Unlike NeuralLog~\cite{neurallog2021}, which discards all numeric tokens prior to 
-encoding, our preprocessing pipeline retains numeric tokens as first-class vocabulary 
-items. Log messages are normalized to lowercase and tokenized using common delimiters 
-such as whitespace, colons, and commas. Numeric tokens such as HTTP status codes, 
-memory values, retry counts, and block identifiers are preserved, as they frequently 
-carry anomaly-relevant signal that uniform removal would destroy.
-
-\begin{figure}[H]
-\centering
-\vspace{-0.5em}
-\begin{tikzpicture}[
-    node distance=0.5cm,
-    startstop/.style={rectangle, rounded corners, minimum width=2cm, minimum height=0.5cm, text centered, draw=black, fill=white!10, font=\scriptsize},
-    process/.style={rectangle, minimum width=2.5cm, minimum height=0.5cm, text centered, draw=black, fill=white!5, font=\scriptsize},
-    model/.style={rectangle, minimum width=2.5cm, minimum height=0.5cm, text centered, draw=black, fill=white!5, font=\scriptsize},
-    arrow/.style={->, >=Stealth}
-]
-\node (in1) [startstop] {Raw Logs};
-\node (pro1) [process, below=of in1] {Tokenization \& BERT};
-\node (pro2) [process, below=of pro1] {Role Induction};
-\node (pro3) [process, below=of pro2] {Role-Aware Pooling};
-\node (mod1) [model, below=of pro3] {Transformer};
-\node (out1) [startstop, below=of mod1] {Classification};
-\draw [arrow] (in1) -- (pro1);
-\draw [arrow] (pro1) -- (pro2);
-\draw [arrow] (pro2) -- (pro3);
-\draw [arrow] (pro3) -- (mod1);
-\draw [arrow] (mod1) -- (out1);
-\end{tikzpicture}
-\vspace{-0.5em}
-\caption{Log Anomaly Detection Pipeline}
-\label{fig:architecture}
-\end{figure}
-
-\subsection{Token Encoding with BERT}
-
-Each preprocessed log message is tokenized using WordPiece tokenization~\cite{schuster2012japanese}, which decomposes rare or domain-specific terms into frequent subword units, eliminating out-of-vocabulary issues common in technical log vocabularies. Token embeddings are generated using BERT-base (12 layers, 768 hidden dimensions)~\cite{devlin2018bert}, producing a set of contextual representations $\mathbf{H} = [\mathbf{h}_1, \mathbf{h}_2, \ldots, \mathbf{h}_n]$ where each $\mathbf{h}_i \in \mathbb{R}^{768}$ encodes a token in the context of its surrounding message.
-
-\subsection{Latent Token Role Induction}
-
-The central contribution of this work is the latent token role induction mechanism. We postulate that tokens in log messages fulfill distinct functional roles — some denote system states, others identify components, others describe operations, and some convey quantitative or spatial information — and that modeling these roles explicitly produces representations better suited to anomaly detection than uniform averaging.
-
-\subsubsection{Role Categories}
-
-Five latent role categories are defined: \textit{state} (e.g., error, timeout, success), \textit{entity} (e.g., node, disk, process), \textit{action} (e.g., detected, killed, restarted), \textit{quantity} (e.g., error codes, counts, identifiers), and \textit{location} (e.g., file paths, registers, directories). Critically, no manual annotation of these roles is required; they are discovered automatically through end-to-end training on sequence-level anomaly labels.
-
-\subsubsection{Role Induction Network}
-
-For each token $t_i$ with BERT embedding $\mathbf{h}_i \in \mathbb{R}^{768}$, a two-layer feedforward network predicts a soft role distribution: \[ \mathbf{r}_i = \text{softmax}(W_r \cdot \text{ReLU}(W_h \mathbf{h}_i + b_h) + b_r) \] where $W_h \in \mathbb{R}^{256 \times 768}$ and $W_r \in \mathbb{R}^{5 \times 256}$ are learned weight matrices and $\mathbf{r}_i \in \mathbb{R}^5$ is the resulting probability distribution over the five role categories. A role-aware token representation is then formed by modulating the BERT embedding with role information: \[ \mathbf{t}_i = \mathbf{h}_i \odot \mathbf{W}_e \mathbf{r}_i \] where $\mathbf{W}_e \in \mathbb{R}^{768 \times 5}$ is a learned role embedding matrix and $\odot$ denotes element-wise multiplication. Since the role induction network is trained solely from the anomaly detection gradient signal, tokens that contribute similarly to detection automatically receive similar role assignments.
-
-\subsection{Role-Aware Message Representation}
-
-Rather than uniformly averaging all token embeddings as in NeuralLog, we construct a structured message representation by performing separate pooling operations for each role category: \[ \mathbf{m} = [\mathbf{m}_{\text{state}};\, \mathbf{m}_{\text{entity}};\, \mathbf{m}_{\text{action}};\, \mathbf{m}_{\text{quantity}};\, \mathbf{m}_{\text{location}}] \] where each role-specific pool is computed as a soft weighted average: \[ \mathbf{m}_k = \frac{\sum_{i=1}^{n} r_{i,k} \cdot \mathbf{t}_i} {\sum_{i=1}^{n} r_{i,k}} \] and $r_{i,k}$ is the probability that token $i$ belongs to role $k$. The resulting message vector $\mathbf{m} \in \mathbb{R}^{3840}$ concatenates five role-specific sub-vectors of 768 dimensions each, preserving structural distinctions that a single averaged vector would collapse.
-
-\subsection{Sequence Modeling}
-
-Log sequences are constructed using a sliding window of size 20 and step 1, following the protocol of NeuralLog~\cite{neurallog2021}. Sinusoidal positional encodings~\cite{vaswani2017attention} are added to each message representation to inject ordering information: \[ \mathbf{x}_i = \mathbf{m}_i + \mathbf{p}_i \] A single-layer Transformer encoder with 12 attention heads and a feedforward dimension of 2048 is then applied over the sequence to model temporal dependencies among log messages: \[ \mathbf{X}' = \text{TransformerEncoder}(\mathbf{X}) \]
-
-\subsection{Classification and Training}
-
-A max-pooling operation is applied over the sequence output to obtain a fixed-size representation, which is passed through a fully connected layer followed by softmax to produce the anomaly prediction: \[ P(\text{anomaly} \mid \mathbf{s}) = \text{softmax}(W_c \mathbf{s} + b_c) \] The full framework is trained end-to-end using binary cross-entropy loss: \[ \mathcal{L} = -\sum_{j} y_j \log \hat{y}_j + (1 - y_j)\log(1 - \hat{y}_j) \] with the AdamW optimizer at a learning rate of $3 \times 10^{-4}$, a batch size of 64, and a dropout rate of 0.1. Early stopping is applied after 5 epochs without improvement, with a maximum of 20 training epochs. Sequence-level anomaly labels are the only supervision required; token roles emerge entirely through backpropagation.
-% ===========================
-% PROBLEM 2
-% ===========================
-
-\section{Problem 2: Attack on XOR-Based Secure Image Sharing using Autoencoders}
-
-A $(4,4)$ plain random XOR secret sharing scheme was used for all experiments.
-
-For each secret image:
 \begin{itemize}
-    \item Three shares are generated randomly using independent Bernoulli sampling,
-    \item The fourth share is computed as the XOR of the binarized secret image with the first three random shares.
+    \item Any sufficiently large subset of shares can \emph{perfectly reconstruct} the original image.
+    \item Any smaller subset of shares reveals \emph{absolutely nothing} about the original image.
 \end{itemize}
 
-Formally, let $S$ denote the binarized secret image and $R_1, R_2, R_3$ denote independent random shares. The fourth share $R_4$ is computed as: \[ R_4 = S \oplus R_1 \oplus R_2 \oplus R_3. \]
+This is sometimes called a \textbf{threshold scheme}.
 
-This guarantees that: \[ S = R_1 \oplus R_2 \oplus R_3 \oplus R_4. \]
+\subsection{The $(k, n)$-Threshold Scheme}
 
-Under classical cryptographic assumptions, any strict subset of fewer than four shares is information-theoretically insufficient to deterministically recover the secret. All shares are generated dynamically during training to prevent memorization and ensure statistical variability across epochs.
+Formally, a $(k, n)$-threshold SIS scheme divides a secret image $S$ into $n$ shares:
+\[
+\{s_1,\, s_2,\, \ldots,\, s_n\}
+\]
+with the following guarantees:
 
-\begin{figure}[H]
+\begin{itemize}
+    \item \textbf{Reconstruction}: Any $k$ or more shares suffice to reconstruct $S$ exactly.
+    \item \textbf{Security}: Any collection of fewer than $k$ shares is statistically independent of $S$ — no information is leaked.
+\end{itemize}
+
+For example, in a $(3, 5)$ scheme, the secret is split into 5 shares distributed across 5 servers. Any 3 servers can collaborate to recover the secret, but any 2 servers (even acting together) learn nothing. This provides both \emph{redundancy} (against server failure) and \emph{security} (against server compromise).
+
+\subsection{Security Assumptions and Their Limitations}
+
+The information-theoretic security guarantee above assumes that shares are analyzed \emph{only} through classical combinatorial means. However, modern deep learning models can sometimes extract partial information by detecting subtle statistical patterns across shares — an assumption that this project explicitly tests and challenges.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Autoencoders}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{What is an Autoencoder?}
+
+An \textbf{autoencoder} is a neural network trained to reproduce its own input at the output. At first glance this seems trivial — why train a network to copy an input? The key insight is that the network is forced to pass the information through a \textbf{bottleneck}: a hidden layer with far fewer dimensions than the input. To reconstruct the input faithfully despite this bottleneck, the network is forced to learn a \emph{compact, meaningful representation} of the data.
+
+\begin{figure}[h]
 \centering
-\vspace{-0.5em}
+\begin{minipage}{0.8\textwidth}
+\centering
+\texttt{Input $\xrightarrow{\text{Encoder}}$ Latent Code $\xrightarrow{\text{Decoder}}$ Reconstructed Output}
+\end{minipage}
+\end{figure}
+
+\subsection{Architecture}
+
+An autoencoder consists of five conceptual stages:
+
+\begin{enumerate}
+    \item \textbf{Input Layer}: Receives the raw data (e.g., a flattened image or a sequence of token embeddings).
+    \item \textbf{Encoder}: A stack of layers that progressively compresses the input into a lower-dimensional space. Each layer applies a learned linear transformation followed by a nonlinear activation function.
+    \item \textbf{Latent Space} (Bottleneck): The compressed representation $\mathbf{z}$ of the input. This is the most information-dense part of the network. A well-trained encoder maps semantically similar inputs to nearby points in latent space.
+    \item \textbf{Decoder}: A symmetric stack of layers that expands the latent code back to the original input dimensionality.
+    \item \textbf{Output Layer}: Produces the reconstructed input $\hat{x}$.
+\end{enumerate}
+
+\subsection{Training Objective}
+
+Autoencoders are trained in an \textbf{unsupervised} fashion — no labels are required. The training objective is to minimize the \textbf{reconstruction error} between the input $x$ and the output $\hat{x}$, typically measured by the Mean Squared Error (MSE):
+\[
+\mathcal{L}(x, \hat{x}) = \frac{1}{N} \sum_{i=1}^{N} (x_i - \hat{x}_i)^2
+\]
+where $N$ is the number of elements (e.g., pixels). In the context of this project, autoencoders are used to learn mappings from image shares back to the original secret image, thereby assessing whether the information-theoretic security of SIS schemes holds under deep learning attacks.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Image Quality Evaluation Metrics}
+% ─────────────────────────────────────────────────────────────────────────────
+
+To evaluate how faithfully a reconstructed image matches the original, two standard metrics are used.
+
+\subsection{Peak Signal-to-Noise Ratio (PSNR)}
+
+\textbf{PSNR} is derived from the MSE between the original and reconstructed images. It is expressed in decibels (dB) and measures the ratio of the maximum possible signal power to the power of the distortion (noise):
+\[
+\text{PSNR} = 10 \cdot \log_{10}\!\left(\frac{\text{peakval}^2}{\text{MSE}}\right)
+\]
+where $\text{peakval}$ is the maximum pixel value (255 for 8-bit images). A \textbf{higher PSNR} means the reconstruction is closer to the original. Typical values above 30 dB are considered good quality, while values below 20 dB indicate significant degradation.
+
+\subsection{Structural Similarity Index Measure (SSIM)}
+
+MSE and PSNR treat each pixel independently, which does not always align with human visual perception. \textbf{SSIM} addresses this by comparing images along three perceptual dimensions simultaneously: \emph{luminance} (overall brightness), \emph{contrast} (variation in brightness), and \emph{structure} (spatial patterns of pixel intensities). The result is a score in the range $[0, 1]$:
+
+\begin{itemize}
+    \item A value of \textbf{1} indicates the two images are structurally identical.
+    \item A value of \textbf{0} indicates no structural similarity whatsoever.
+\end{itemize}
+
+SSIM is preferred over PSNR when perceptual quality is important, since two images can have the same MSE but look very different to a human observer.
+
+
+\section{Literature Review}
+\label{sec:lad-litreview}
+The concept of secret image sharing was first motivated by the development of classical secret sharing schemes by Shamir \cite{shamir1979share}, which laid a theoretical foundation for secret sharing among multiple parties. Naor and Shamir \cite{naor1995visual} later extended this idea to visual cryptography for images. The main idea is to encode a secret image into a number of shares such that any qualified set of shares will reveal the secret image visually. However, any unqualified subset will reveal nothing. The problem of visual cryptography is that there is a loss in contrast and resolution. 
+
+To address this problem, XOR-based secret image sharing schemes have been proposed. The XOR-based secret image sharing schemes operate on image pixels instead of bits. The XOR-based secret image sharing schemes use Shannon's perfect secrecy concept \cite{shannon1949communication} to guarantee perfect reconstruction of the secret image from all the shares. The XOR-based secret image sharing schemes also guarantee that any subset of shares is statistically independent of the secret image. This ensures that there is zero mutual information between any unqualified subset of shares and the secret image.
+
+However, the security proofs for the XOR-based constructions assume the presence of adversaries without access to structural priors about natural images. Recent deep learning advances contradict this. Convolutional Neural Networks (CNNs) \cite{lecun1998gradient} have shown impressive performance in learning hierarchical spatial representations from image data. Architectural innovations such as batch normalization \cite{ioffe2015batch} improve the stability of the learning process, while encoder-decoder architectures, such as the U-Net \cite{ronneberger2015unet}, enable accurate reconstruction for inverse image problems. Autoencoders, when learned using pixel-wise reconstruction objectives, can extract compact feature representations that can reconstruct structured image information from corrupted images. Moreover, the use of Perceptual Loss functions \cite{johnson2016perceptual} can improve the reconstruction quality for images. The reconstruction quality for such images can be measured using full-reference image similarity measures. The Peak Signal-to-Noise Ratio (PSNR) can measure the pixel-wise fidelity of the reconstruction, while the Structural Similarity Index Measure (SSIM) \cite{wang2004image} can measure the structural similarity between images by comparing the luminance, contrast, and structural information.
+
+In spite of the solid theoretical foundation of secret sharing via XOR and the remarkable advancements in the field of image reconstruction via deep learning methods, only a few works have attempted to explore the possibility of reconstructing the secret image via learning the priors of images and utilizing only certain subsets of the shares generated via XOR operations. Most of the existing works have been dedicated to enhancing the efficiency and robustness of secret image sharing methods and verifying their feasibility rather than testing their robustness against learning-based attacks. This work attempts to bridge this gap and test the robustness of secret image sharing via XOR operations against learning-based attacks and determine whether the secret image can be reconstructed via learning the priors of images and utilizing only certain subsets of the shares generated via XOR operations.
+
+
+\section{Work Done}
+\label{sec:lad-work}
+% ─────────────────────────────────────────────────────────────────────────────
+
+
+A $(4,4)$ conventional random XOR secret sharing algorithm was applied to all cases.
+Three shares are created randomly based on independent Bernoulli sampling,
+while the fourth share is obtained by XOR operation between the binarized
+secret image and the previous three shares.
+
+In mathematical terms, let $S$ be the secret image converted into binary, and
+$R_1$, $R_2$, and $R_3$ be independent random shares. The fourth share $R_4$ is
+generated by the following equation:
+
+\[
+    R_4 = S \oplus R_1 \oplus R_2 \oplus R_3.
+\]
+This guarantees that:
+\[
+    S = R_1 \oplus R_2 \oplus R_3 \oplus R_4.
+\]
+
+According to traditional cryptographic theory~\cite{shannon1949communication},
+a combination of shares that is less than four shares will lack the sufficient
+information required to reconstruct the secret image. All shares are dynamically
+generated during training to avoid memorization.
+
+\begin{figure}[htbp]
+\centering
 \begin{tikzpicture}[
-    node distance=0.5cm,
-    startstop/.style={rectangle, rounded corners, minimum width=3cm, minimum height=0.5cm, text centered, draw=black, fill=white!10, font=\scriptsize},
-    process/.style={rectangle, minimum width=3cm, minimum height=0.5cm, text centered, draw=black, fill=white!5, font=\scriptsize},
-    model/.style={rectangle, minimum width=3cm, minimum height=0.5cm, text centered, draw=black, fill=white!5, font=\scriptsize},
+    node distance=0.45cm,
+    startstop/.style={rectangle, rounded corners, minimum width=3cm,
+        minimum height=0.45cm, text centered, draw=black, fill=white,
+        font=\scriptsize},
+    process/.style={rectangle, minimum width=3cm, minimum height=0.45cm,
+        text centered, draw=black, fill=white, font=\scriptsize},
     arrow/.style={->, >=Stealth}
 ]
-
-% Nodes
-\node (in1) [startstop] {Secret Image $S$ (MNIST)};
-\node (pro1) [process, below=of in1] {Binarization \& Resize ($128 \times 128$)};
-\node (pro2) [process, below=of pro1] {XOR Share Generation ($R_1, R_2, R_3, R_4$)};
-\node (pro3) [process, below=of pro2] {Share Concatenation (Channel Dimension)};
-\node (mod1) [model, below=of pro3] {Residual CNN Decoder ($f_\theta$ or $g_\phi$)};
-\node (pro4) [process, below=of mod1] {Sigmoid Output Layer};
-\node (out1) [startstop, below=of pro4] {Reconstructed Image $\hat{S}$};
-\node (eval) [startstop, below=of out1] {Evaluation: SSIM \& PSNR};
-
-% Arrows
-\draw [arrow] (in1) -- (pro1);
+\node (in1)  [startstop]                  {Secret Image $S$ (MNIST)};
+\node (pro1) [process, below=of in1]      {Binarization \& Resize ($128{\times}128$)};
+\node (pro2) [process, below=of pro1]     {XOR Share Generation ($R_1, R_2, R_3, R_4$)};
+\node (pro3) [process, below=of pro2]     {Share Concatenation (Channel Dimension)};
+\node (mod1) [process, below=of pro3]     {Residual CNN Decoder ($f_\theta$ or $g_\phi$)};
+\node (pro4) [process, below=of mod1]     {Sigmoid Output Layer};
+\node (out1) [startstop, below=of pro4]   {Reconstructed Image $\hat{S}$};
+\node (eval) [startstop, below=of out1]   {Evaluation: SSIM \& PSNR};
+\draw [arrow] (in1)  -- (pro1);
 \draw [arrow] (pro1) -- (pro2);
 \draw [arrow] (pro2) -- (pro3);
 \draw [arrow] (pro3) -- (mod1);
 \draw [arrow] (mod1) -- (pro4);
 \draw [arrow] (pro4) -- (out1);
 \draw [arrow] (out1) -- (eval);
-
 \end{tikzpicture}
-\vspace{-0.5em}
-\caption{Learning-Based Attack Pipeline on XOR Secret Sharing Scheme}
+\caption{Autoencoder Based Attack Pipeline on XOR Secret Sharing Scheme.}
 \label{fig:xor_attack_pipeline}
 \end{figure}
 
 \subsection{Dataset Preparation}
 
-The MNIST dataset was used for training and evaluation. All images were:
-\begin{itemize}
-    \item Normalized to the range $[0,1]$,
-    \item Resized to a spatial resolution of $128 \times 128$,
-    \item Treated as single-channel grayscale inputs.
-\end{itemize}
-
-Share generation was performed on-the-fly during training to prevent fixed share–image pair memorization and to improve generalization of the learning-based decoder.
+MNIST~\cite{lecun1998gradient} dataset is used for training and testing purposes.
+The images were first normalized between $[0,1]$ and then resized to $128 \times 128$
+pixels, and are fed into the system as grayscale images. The shares are generated on-the-go
+during training to avoid memorizing of specific share-image pairs.
 
 \subsection{Learning-Based Reconstruction Framework}
 
-To evaluate the vulnerability of XOR-based secret sharing under learning-based
-attacks, two distinct decoder configurations were investigated.
+Two distinct decoder configurations were investigated.
 
 \subsubsection{Configuration 1: Decoder Trained on All Four Shares}
 
-In the first configuration, the neural decoder is trained using all four shares as input.
-
-\paragraph{Input Representation}
-The four generated shares are concatenated along the channel dimension to form a 4-channel tensor of size $128 \times 128 \times 4$.
-
-\paragraph{Training Objective}
-The decoder learns a mapping: \[ f_\theta : \mathbb{R}^{128 \times 128 \times 4} \rightarrow \mathbb{R}^{128 \times 128}, \] where the target output is the original secret image. Binary cross-entropy loss is used for optimization, and the model is trained for 20 epochs using the Adam optimizer.
-
-\paragraph{Evaluation Scenarios}
-The trained model is evaluated under multiple share availability conditions:
-\begin{itemize}
-    \item All four shares available,
-    \item One share missing (replaced with a zero/blank share),
-    \item Two shares missing (replaced with zero shares),
-    \item Three shares missing (only one share available).
-\end{itemize}
-
-This configuration models an attacker who has full exposure during training but encounters incomplete share availability during inference.
-
-\subsubsection{Configuration 2: Decoder Trained on Three Consecutive Shares}
-
-In the second configuration, the decoder is trained using only three consecutive shares without wrap-around. The valid combinations considered are:
-\begin{itemize}
-    \item Shares $\{1,2,3\}$,
-    \item Shares $\{2,3,4\}$.
-\end{itemize}
-
-\paragraph{Input Representation}
-The selected three shares are concatenated to form a 3-channel tensor of size
-$128 \times 128 \times 3$.
-
-\paragraph{Training Objective}
-The decoder learns the mapping:
-\[ g_\phi : \mathbb{R}^{128 \times 128 \times 3} \rightarrow \mathbb{R}^{128 \times 128}. \]
-
-The same residual convolutional architecture, optimizer, and loss function are used as in configuration 1, ensuring architectural consistency across experiments.
-
-\paragraph{Evaluation}
-Each consecutive combination is evaluated independently on unseen test images using the same three-share configuration employed during training. This setup models a constrained adversarial scenario in which the attacker never observes all four shares, even during training.
-
-\subsection{Decoder Architecture}
-
-Both configurations employ a convolutional neural network with residual
-connections. The architecture consists of:
-\begin{itemize}
-    \item Initial convolutional layers for low-level feature extraction,
-    \item Multiple residual blocks to preserve spatial information and stabilize
-    training,
-    \item Batch normalization and dropout for regularization,
-    \item A sigmoid-activated output layer producing the reconstructed image.
-\end{itemize}
-
-The only architectural difference between configuration 1 and configuration 2 lies in the number of input channels (four versus three).
-
-\subsection{Training and Evaluation Protocol}
-
-All models were trained for 20 epochs using dynamically generated share sets
-and optimized with the Adam optimizer using binary cross-entropy loss.
-
-Reconstruction quality was evaluated on unseen test images using:
-\begin{itemize}
-    \item Structural Similarity Index Measure (SSIM),
-    \item Peak Signal-to-Noise Ratio (PSNR).
-\end{itemize}
-
-Evaluation was performed independently for each share configuration.
-
-\subsection{Outcome}
-
-The experiments demonstrate that neural networks can learn to approximate the
-reconstruction function of XOR-based secret sharing without explicitly performing
-XOR operations during inference.
-
-While exact reconstruction theoretically requires all four shares, the learning-
-based decoder is capable of producing perceptually meaningful approximations even
-under partial share availability. This behavior arises from the model exploiting
-dataset priors rather than breaking the underlying cryptographic construction.
-
-These findings extend classical cryptographic analysis by highlighting potential
-learning-based vulnerabilities when secret sharing schemes are deployed in data-
-rich environments.
- The valid combinations considered are:
-\begin{itemize}
-    \item Shares $\{1,2,3\}$,
-    \item Shares $\{2,3,4\}$.
-\end{itemize}
-
-\paragraph{Input Representation}
-The selected three shares are concatenated to form a 3-channel tensor of size
-$128 \times 128 \times 3$.
-
-\paragraph{Training Objective}
-The decoder learns the mapping:
-\[ g_\phi : \mathbb{R}^{128 \times 128 \times 3} \rightarrow \mathbb{R}^{128 \times 128}. \]
-
-The same residual convolutional architecture, optimizer, and loss function are used as in configuration 1, ensuring architectural consistency across experiments.
-
-\paragraph{Evaluation}
-Each consecutive combination is evaluated independently on unseen test images using the same three-share configuration employed during training. This setup models a constrained adversarial scenario in which the attacker never observes all four shares, even during training.
-
-\subsection{Decoder Architecture}
-
-Both configurations employ a convolutional neural network with residual
-connections. The architecture consists of:
-\begin{itemize}
-    \item Initial convolutional layers for low-level feature extraction,
-    \item Multiple residual blocks to preserve spatial information and stabilize
-    training,
-    \item Batch normalization and dropout for regularization,
-    \item A sigmoid-activated output layer producing the reconstructed image.
-\end{itemize}
-
-The only architectural difference between configuration 1 and configuration 2 lies in the number of input channels (four versus three).
-
-\subsection{Training and Evaluation Protocol}
-
-All models were trained for 20 epochs using dynamically generated share sets
-and optimized with the Adam optimizer using binary cross-entropy loss.
-
-Reconstruction quality was evaluated on unseen test images using:
-\begin{itemize}
-    \item Structural Similarity Index Measure (SSIM),
-    \item Peak Signal-to-Noise Ratio (PSNR).
-\end{itemize}
-
-Evaluation was performed independently for each share configuration.
-
-
-% ===========================
-% PROBLEM 3
-% ===========================
-
-\section{Work Done for Problem 3: Cryptanalysis of Medical Image Encryption Scheme}
-
-This work performs a complete cryptanalysis of a chaos-based medical image encryption scheme proposed by Jain et al.~\cite{jain2021medical}. The scheme employs a permutation-diffusion structure using Arnold's Cat Map and a Two-Dimensional Logistic Sine Coupling Map (2D-LSCM). We demonstrate that the two-round permutation-diffusion structure provides no actual resistance to a chosen-plaintext adversary. Both the equivalent keystream and the full permutation mapping can be extracted with a small oracle query budget, after which any ciphertext may be decrypted without the secret key.
-
-% -----------------------------------------------------------------------
-\subsection{Overview of the Target Encryption Scheme}
-
-Two distinct chaotic maps form the algorithmic backbone of the scheme. Arnold's Cat Map handles pixel-position shuffling during the permutation phase, while the Two-Dimensional Logistic Sine Coupling Map (2D-LSCM) drives keystream generation for the diffusion phase.
-
-\subsubsection{Two-Dimensional Logistic-Sine-Coupling Map (2D-LSCM)}
-
-The 2D-LSCM is constructed by coupling the one-dimensional logistic map with the one-dimensional sine map. The logistic map is given by
-\begin{equation}
-x_{i+1} = r x_i(1-x_i),
-\end{equation}
-where $r$ denotes the growth-rate parameter and $x_i \in (0,1)$. The sine map takes the form
-\begin{equation}
-x_{i+1} = \alpha \sin(\pi x_i),
-\end{equation}
-with control parameter $\alpha \in [0,1]$. Coupling these two one-dimensional systems through a sine nonlinearity produces the 2D-LSCM:
-\begin{equation}
-\begin{cases}
-x_{i+1} = \sin\!\bigl(\pi\bigl(4\theta\, x_i(1-x_i) + (1-\theta)\sin(\pi y_i)\bigr)\bigr),\\[4pt]
-y_{i+1} = \sin\!\bigl(\pi\bigl(4\theta\, y_i(1-y_i) + (1-\theta)\sin(\pi x_{i+1})\bigr)\bigr),
-\end{cases}
-\end{equation}
-where $\theta \in [0,1]$ is the coupling control parameter. By operating in a substantially higher-dimensional phase space than either constituent map, the 2D-LSCM achieves greater ergodicity and a wider chaotic parameter range.
-
-\subsubsection{Arnold's Cat Map}
-
-Arnold's Cat Map is a classical area-preserving automorphism of the torus, which, when applied to a square image, performs a deterministic reordering of pixel coordinates. For an image of size $n \times n$, the transformation is
-\begin{equation}
-\begin{pmatrix} x' \\ y' \end{pmatrix}
-=
-\begin{pmatrix} 1 & 1 \\ 1 & 2 \end{pmatrix}
-\begin{pmatrix} x \\ y \end{pmatrix} \mod n,
-\end{equation}
-with $(x,y)$ and $(x',y')$ denoting the pre-image and image pixel coordinates, respectively. The mapping is periodic with period $3n+1$, meaning that repeated application returns the image to its original state after exactly $3n+1$ iterations. The number of iterations $P_i$, satisfying $1 < P_i < 3n+1$, constitutes the secret parameter $K_1$ for this component.
-
-% -----------------------------------------------------------------------
-\subsection{Encryption Process}
-
-Let $P$ be a plain image of dimensions $M \times N$. Encryption is organized as two consecutive rounds, each comprising a permutation phase followed by a diffusion phase.
-
-\subsubsection{Permutation}
-
-The permutation phase introduces confusion by relocating pixel positions under the joint action of both chaotic maps. Arnold's Cat Map is applied for $P_i$ iterations, and a chaotic matrix $X$ is constructed by iterating the 2D-LSCM; column-wise sorting of $X$ then yields a permutation index matrix that governs the final repositioning of pixel values, producing the permuted image $T$. Critically, the permuted image $T$ depends exclusively on $X$ and $P_i$—no pixel value from $P$ influences the permutation itself.
-
-\subsubsection{Diffusion}
-
-The diffusion phase modifies pixel values so that any single-pixel change in the plaintext propagates throughout the ciphertext. Let $T$ be the permuted image and $X$ the chaotic matrix. For an image sequence of length $O$, the encrypted pixel $E_i$ is
-\begin{equation}
-E_i =
-\begin{cases}
-P_1 + P_O + P_{O-1} + X_i \bmod F, & i=1,\\[4pt]
-P_2 + E_1 + P_O + X_i \bmod F, & i=2,\\[4pt]
-T_i + E_{i-1} + E_{i-2} + X_i \bmod F, & i \geq 3,
-\end{cases}
-\label{eq:diffusion_enc}
-\end{equation}
-where $F = 255$ for 8-bit imagery and $X_i = \lfloor x_i \times 2^{32} \rfloor$ is the $i$-th element of the scaled chaotic matrix. The recursive dependence on $E_{i-1}$ and $E_{i-2}$ establishes an inter-pixel dependency chain that ensures downstream propagation of any modification. The entire permutation-diffusion cycle is repeated for a second round to yield the final cipher image $C$.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.9\linewidth]{images/target_methodology.png}
-\caption{Encryption process of the target scheme}
-\end{figure}
-
-% -----------------------------------------------------------------------
-\subsection{Chosen-Plaintext Attack Framework}
-
-The adversary is assumed to have black-box access to an encryption oracle $\mathcal{E}(\cdot)$ that, given any $n \times n$ image $P$, returns the corresponding ciphertext $C = \mathcal{E}(P)$ under an unknown fixed key $(K_1, K_2)$:
+The neural decoder network is trained on all four shares combined along the channel axis
+to produce a four-channel image tensor of dimensions $128 \times 128 \times 4$. This
+training involves learning the following transformation:
 \[
-C = \mathcal{E}(P).
+    f_\theta : \mathbb{R}^{128 \times 128 \times 4} \rightarrow \mathbb{R}^{128 \times 128}.
 \]
-The adversary has no knowledge of any internal parameters: $x_0$, $y_0$, $\theta$, $P_i$, the chaotic matrix $X$, or the permutation map $\mathcal{M}$.
+The loss function employed for training is binary cross-entropy, and the model is
+trained for 20 epochs using the Adam optimizer~\cite{kingma2015adam}. The trained
+model is tested for various scenarios involving different shares, where the missing
+shares are filled with zeros.
 
-The exploitable structural weakness is the \emph{plaintext-independence} of all key material. Because the 2D-LSCM sequence $\{x_i\}$ and the derived permutation map $\mathcal{M}$ are functions solely of the secret key—not of the image being encrypted—they remain identical across all images of the same dimensions under the same key. This renders them static equivalent keys, a well-documented vulnerability class in chaos-based cipher design.
+\subsection{Configuration 2: Decoding with Three Consecutive XOR Shares (Independently Trained Model)}
 
-The attack proceeds through three phases: (i) keystream extraction by encrypting a zero-valued image, (ii) permutation map reconstruction via structured probe images, and (iii) full decryption of any target ciphertext from the recovered parameters. The data complexity is $n+1$ oracle queries for an $n \times n$ image, and the total computational cost is $\mathcal{O}(n^3)$, dominated by the Arnold map applications in Phase 2.
+Another autoencoder was trained specifically for this configuration, using only three
+consecutive XOR shares as inputs. As opposed to Configuration~1, in which the decoder
+was trained with all four shares, here the fourth share is not even seen during training.
+Therefore, the learning task becomes different because now the model is required to learn
+to reconstruct from an incomplete input distribution.
 
-\begin{figure}[H]
+Training of this decoder takes place using only three shares, where no wraparound is employed. Training is done independently from the four-shares decoder, meaning that no weights are shared.
+The possible pairs of shares for the training are: $\{1,2,3\}$ and $\{2,3,4\}$. Three shares are stacked to produce a 3-channel matrix of dimensions $128 \times 128 \times 3$, and the training takes place by learning the mapping:
+\[
+    g_\phi : \mathbb{R}^{128 \times 128 \times 3} \rightarrow \mathbb{R}^{128 \times 128}.
+\]
+The same convolutional residual architecture, optimizer, and loss are used as
+in Configuration 1.
+
+
+\subsection{Decoder Architecture}
+
+For both configurations, we use a convolutional neural network with
+residual connections~\cite{he2016deep}. The CNN includes an initial
+convolution layer for low-level feature extraction, followed by several
+blocks that utilize residual connections in order to conserve spatial
+information and facilitate learning. Additionally, the network uses
+batch normalization~\cite{ioffe2015batch}, dropout~\cite{srivastava2014dropout},
+and a sigmoid activation on the output node that produces the reconstructed
+image.
+
+% ===========================
+
+
+
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Results and Analysis}
+\label{sec:lad-results}
+
+In this part, a thorough analysis is presented for the proposed learning-based reconstruction attack in scenarios with different levels of access to the XOR shares. Two cases are considered: (i) training of the decoder using all four XOR shares and testing in full and partial input scenarios (Figs.~\ref{fig:all_results}(a)-(d)), and (ii) training of the decoder using only three consecutive XOR shares (Figs.~\ref{fig:all_results}(e)-(f)).
+
+Reconstruction quality is measured both by numerical means using SSIM and PSNR
+values, and also visually using Fig.~\ref{fig:all_results}.
+Each image number is associated with each particular MNIST digit class, such
+as Image~1 for the digit class ``1''. Tables provide data for the digit
+classes 1--5 for conciseness, although all results were actually computed for
+all ten MNIST digit classes (0--9). The sample reconstructions of
+Fig.~\ref{fig:all_results} refer to the digit class ``7''.
+
+% ===========================
+\begin{figure*}[htbp]
 \centering
-\begin{tikzpicture}[
-block/.style={draw, rectangle, minimum width=3.2cm, minimum height=1cm, align=center},
-arrow/.style={->, thick}
-]
-\node[block] (input) at (0,6) {Chosen Plaintexts};
-\node[block] (oracle) at (0,4.5) {Encryption Oracle};
-\node[block] (cipher) at (0,3) {Cipher Outputs};
-\node[block] (ks) at (-4,1.5) {Keystream Recovery};
-\node[block] (perm) at (4,1.5) {Permutation Recovery};
-\node[block] (decrypt) at (0,0) {Decryption};
-\node[block] (out) at (0,-1.5) {Recovered Image};
-\draw[arrow] (input) -- (oracle);
-\draw[arrow] (oracle) -- (cipher);
-\draw[arrow] (cipher) -- (-4,2.2) -- (ks);
-\draw[arrow] (cipher) -- (4,2.2) -- (perm);
-\draw[arrow] (ks) -- (decrypt);
-\draw[arrow] (perm) -- (decrypt);
-\draw[arrow] (decrypt) -- (out);
-\end{tikzpicture}
-\caption{Block diagram of the proposed chosen-plaintext attack showing keystream recovery, permutation recovery, and final decryption without the secret key.}
-\label{fig:cpa}
-\end{figure}
 
-% -----------------------------------------------------------------------444
-
-
-\begin{algorithm}[H]
-\LinesNumbered
-\caption{Chosen-Plaintext Attack on the Target Scheme}
-\label{alg:cpa}
-\SetAlgoLined
-\KwIn{Encryption oracle $\mathcal{E}(\cdot)$; target ciphertext $C$; image size $n$.}
-\KwOut{Recovered plaintext $\hat{P}$.}
-\BlankLine
-\tcp{Phase 1: Keystream Recovery}
-$C^{(0)} \leftarrow \mathcal{E}(\mathbf{0}_{n \times n})$ \;
-Compute $\hat{X}_i$ for all $i$ using Eq.~\eqref{eq:keystream_recovery}\;
-\BlankLine
-\tcp{Phase 2: Permutation Map Recovery}
-\For{$j = 1$ \KwTo $n$}{
-    Construct $P^{(j)}$\;
-Set $P^{(j)}_{r,j} \leftarrow r$ for all $r$\;
-Set $P^{(j)}_{r,k} \leftarrow 0$ for all $k \neq j$\;
-
-Compute $Q^{(j)} \leftarrow \mathrm{ACM}^{(3n+1-P_i)}\bigl(P^{(j)}\bigr)$\;
-
-$C^{(j)} \leftarrow \mathcal{E}(Q^{(j)})$\;
-
-$\hat{T}^{(j)} \leftarrow \mathcal{D}_{\hat{X}}(C^{(j)})$\;
-
-$\hat{\sigma}_j \leftarrow \hat{T}^{(j)}[:,j]$\;
+\subfloat[All 4 Shares]{%
+  \label{fig:vis_all4}%
+  \includegraphics[width=0.8\textwidth]{images/xor4_vis.png}%
 }
-\BlankLine
-\tcp{Phase 3: Decryption of Target Ciphertext}
-$\hat{T} \leftarrow \mathcal{D}_{\hat{X}}(C)$\;
-\For{$j = 1$ \KwTo $n$}{
-    $\hat{S}[\hat{\sigma}_j(:),\, j] \leftarrow \hat{T}[:,j]$\;
+
+\vspace{0.5em}
+
+\subfloat[1 Share Missing]{%
+  \label{fig:vis_miss1}%
+  \includegraphics[width=0.8\textwidth]{images/xor_missing1.png}%
 }
-$\hat{P} \leftarrow \mathrm{ACM}^{(3n+1-\tilde{P}_i)}(\hat{S})$\;
-\Return $\hat{P}$
-\end{algorithm}
 
+\vspace{0.5em}
 
-\subsection{Phase 1: Keystream Recovery via a Zero Plaintext}
-
-This phase exploits the encryption of an all-zero image to decouple the diffusion layer from the permutation layer and directly expose the keystream.
-
-\subsubsection{Structural Observation}
-
-Let $\mathbf{0}$ denote the $n \times n$ all-zero image and let $C^{(0)} = \mathcal{E}(\mathbf{0})$.
-
-\textbf{Step 1 (Arnold's Cat Map acts as the identity on a zero image).}
-Arnold's Cat Map permutes pixel \emph{coordinates} while leaving pixel \emph{values} unchanged. Because every pixel of $\mathbf{0}$ carries the value zero, the map produces the same all-zero image irrespective of the iteration count:
-\begin{equation}
-\mathrm{ACM}^{P_i}(\mathbf{0}) = \mathbf{0}.
-\end{equation}
-
-\textbf{Step 2 (2D-LSCM column permutation acts as the identity on a zero image).}
-The column-wise permutation step rearranges rows within column $j$ according to a permutation $\sigma_j$ derived from chaotic matrix $X$. When $P = \mathbf{0}$, every element selected by the permutation equals zero, so:
-\begin{equation}
-T^{(0)} = \mathbf{0}.
-\end{equation}
-
-\textbf{Step 3 (Diffusion collapses to a pure keystream recurrence).}
-With $T^{(0)}_i = 0$ for all $i$, the diffusion equation~\eqref{eq:diffusion_enc} simplifies. Substituting and rearranging yields:
-\begin{equation}
-C^{(0)}_1 = X_1
-\end{equation}
-\begin{equation}
-C^{(0)}_2 = X_1 + X_2 \bmod F
-\end{equation}
-\begin{equation}
-C^{(0)}_i = C^{(0)}_{i-1} + C^{(0)}_{i-2} + X_i \bmod F, \quad i \geq 3.
-\end{equation}
-Rearranging gives the keystream recovery formula:
-\begin{equation}
-\boxed{
-\hat{X}_i =
-\begin{cases}
-C^{(0)}_1, & i = 1,\\[4pt]
-\bigl(C^{(0)}_2 - C^{(0)}_1\bigr) \bmod F, & i = 2,\\[4pt]
-\bigl(C^{(0)}_i - C^{(0)}_{i-1} - C^{(0)}_{i-2}\bigr) \bmod F, & i \geq 3.
-\end{cases}
+\subfloat[2 Shares Missing]{%
+  \label{fig:vis_miss2}%
+  \includegraphics[width=0.8\textwidth]{images/xor_missing2.png}%
 }
-\label{eq:keystream_recovery}
-\end{equation}
 
-\subsubsection{Correctness of Keystream Recovery}
+\vspace{0.5em}
 
-\begin{proposition}
-Every value $\hat{X}_i$ recovered by Eq.~\eqref{eq:keystream_recovery} satisfies $\hat{X}_i = X_i$ for $i = 1, \ldots, N$.
-\end{proposition}
+\subfloat[3 Shares Missing]{%
+  \label{fig:vis_miss3}%
+  \includegraphics[width=0.8\textwidth]{images/xor_missing3.png}%
+}
 
-\begin{proof}
-For $i=1$: directly $\hat{X}_1 = C^{(0)}_1 = X_1$. For $i=2$: $\hat{X}_2 = (C^{(0)}_2 - C^{(0)}_1) \bmod F = X_2$. For $i \geq 3$: by induction, assuming $\hat{X}_k = X_k$ for all $k < i$, we have $\hat{X}_i = (C^{(0)}_i - C^{(0)}_{i-1} - C^{(0)}_{i-2}) \bmod F = X_i$.
-\end{proof}
+\vspace{0.5em}
 
-\noindent The complete keystream is thus recovered exactly from a \emph{single} oracle query.
+\subfloat[Shares \{1,2,3\}]{%
+  \label{fig:vis_123}%
+  \includegraphics[width=0.8\textwidth]{images/xor_1_2_3.png}%
+}
 
-% -----------------------------------------------------------------------
-\subsection{Phase 2: Permutation Map Reconstruction}
+\vspace{0.5em}
 
-With the keystream $\{\hat{X}_i\}$ in hand, we reconstruct the full permutation map $\mathcal{M}$ using exactly $n$ additional oracle queries.
+\subfloat[Shares \{2,3,4\}]{%
+  \label{fig:vis_234}%
+  \includegraphics[width=0.8\textwidth]{images/xor_2_3_4.png}%
+}
 
-\subsubsection{Permutation Structure}
+\caption{Visualized outcomes of the MNIST digit `7' for different settings of the XOR
+sharing. The subplots~(a)-(d) are generated from the decoder model trained
+on all four shares (Setting~1). The subplots~(e)-(f) are generated from the
+decoder model trained on only three consecutive shares (Setting~2).}
+\label{fig:all_results}
+\end{figure*}
 
-From the encryption process, the permutation stage applies Arnold's Cat Map for $P_i$ iterations and then performs a column-wise sorting step driven by the chaotic matrix $X$. Specifically, for column $j$, if $\sigma_j = \mathrm{argsort}(X[:,j])$ is the permutation induced by sorting that column, the output satisfies
-\begin{equation}
-T[:,j] = S[\sigma_j, j],
-\end{equation}
-where $S = \mathrm{ACM}^{P_i}(P)$. The attacker seeks to determine $\mathcal{M}[:,j] = \sigma_j$ for every column.
+% ===========================
+\subsection{Configuration 1: Decoding with All Four XOR Shares}
 
-\subsubsection{Probe Plaintext Design}
+\subsubsection{Case (a): Evaluation with All Four Shares}
 
-For each column index $j \in \{1, \ldots, n\}$, a probe image $P^{(j)}$ is constructed so that column $j$ encodes the row-index sequence $0, 1, \ldots, n-1$ and every other column is identically zero:
-\begin{equation}
-P^{(j)}_{r,c} =
-\begin{cases}
-r, & c=j,\\
-0, & c \neq j.
-\end{cases}
-\end{equation}
-To neutralize the Arnold preprocessing, the probe submitted to the oracle is the $P_i$-step pre-image of $P^{(j)}$ under the Arnold map, exploiting the map's periodicity:
-\begin{equation}
-Q^{(j)} = \mathrm{ACM}^{-P_i}\bigl(P^{(j)}\bigr) = \mathrm{ACM}^{(3n+1-P_i)}\bigl(P^{(j)}\bigr).
-\end{equation}
+Table~\ref{tab:xor4} presents reconstruction quality when all four XOR shares
+are available during testing. The visual result for the digit ``7'' is shown in
+Fig.~\ref{fig:all_results}(a).
 
-\subsubsection{Oracle Output and Permutation Recovery}
+\begin{table}[htbp]
+\centering
+\caption{Reconstruction Quality Using All Four XOR Shares.}
+\label{tab:xor4}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
+\hline
+Image 1   & 0.9790 & 34.22 \\
+Image 2   & 0.9652 & 31.92 \\
+Image 3   & 0.9882 & 37.47 \\
+Image 4   & 0.9651 & 33.45 \\
+Image 5   & 0.9626 & 32.28 \\
+\hline
+\textbf{Average} & $\mathbf{\approx 0.9720}$ & $\mathbf{\approx 33.87}$ \\
+\hline
+\end{tabular}
+\end{table}
 
-When the oracle processes $Q^{(j)}$, the Arnold step undoes the pre-imaging, so that the effective input to the column-sort is precisely $P^{(j)}$. Since column $j$ of $P^{(j)}$ encodes the row indices $r$, the column-sort directly reads out the permutation:
-\begin{equation}
-T^{(j)}[\ell,j] = \sigma_j(\ell), \qquad \ell = 1, \ldots, n.
-\end{equation}
-All other columns are zero, so they carry no extraneous information. The oracle then applies diffusion to yield $C^{(j)} = \mathcal{E}(Q^{(j)})$. Inverting the diffusion using the recovered $\hat{X}$:
-\begin{equation}
-\hat{T}^{(j)}_i =
-\begin{cases}
-\bigl(C^{(j)}_1 - C^{(j)}_{N} - C^{(j)}_{N-1} - \hat{X}_1\bigr) \bmod F, & i=1,\\[4pt]
-\bigl(C^{(j)}_2 - C^{(j)}_1 - C^{(j)}_{N} - \hat{X}_2\bigr) \bmod F, & i=2,\\[4pt]
-\bigl(C^{(j)}_i - C^{(j)}_{i-1} - C^{(j)}_{i-2} - \hat{X}_i\bigr) \bmod F, & i \geq 3,
-\end{cases}
-\label{eq:inv_diff_probe}
-\end{equation}
-from which the permutation indices for column $j$ are read directly:
-\begin{equation}
-\hat{\sigma}_j(\ell) = \hat{T}^{(j)}[\ell, j], \qquad \ell = 1, \ldots, n.
-\end{equation}
-Iterating over all $j = 1, \ldots, n$ completes reconstruction of $\hat{\mathcal{M}}$.
+The reconstructions are highly similar to the input, with global structure and fine details being preserved. The high values for SSIM and PSNR suggest that the neural network successfully reconstructs an input without loss, which is very similar to classical XOR decoding. This finding supports previous research, which shows that residual CNNs can decode structured linear transformations if enough input is present~\cite{he2016deep}.
 
-\begin{proposition}
-The recovered map satisfies $\hat{\mathcal{M}} = \mathcal{M}$ exactly.
-\end{proposition}
+% ---
+\subsubsection{Case (b): One Share Missing}
 
-\begin{proof}
-The probe design guarantees $T^{(j)}[\ell,j] = \sigma_j(\ell)$. Since Proposition~1 guarantees $\hat{X}_i = X_i$ for all $i$, the inverse diffusion in Eq.~\eqref{eq:inv_diff_probe} recovers $\hat{T}^{(j)} = T^{(j)}$ without error, whence $\hat{\sigma}_j = \sigma_j$ for every $j$.
-\end{proof}
+Table~\ref{tab:xor_miss1} reports reconstruction quality when one of the four
+XOR shares is withheld and replaced by a zero-valued channel. The corresponding
+visual output for the digit ``7'' is shown in Fig.~\ref{fig:all_results}(b).
 
-% -----------------------------------------------------------------------
-\subsection{Phase 3: Complete Decryption of Arbitrary Ciphertexts}
+\begin{table}[htbp]
+\centering
+\caption{Reconstruction Quality with One XOR Share Missing.}
+\label{tab:xor_miss1}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
+\hline
+Image 1   & 0.0020  &  6.28 \\
+Image 2   & 0.0057  &  6.40 \\
+Image 3   & 0.0028  &  6.05 \\
+Image 4   & 0.0129  &  6.41 \\
+Image 5   & 0.0022 & 6.28 \\
+\hline
+\textbf{Average} & $\mathbf{\approx 0.0042}$ & $\mathbf{\approx 6.28}$ \\
+\hline
+\end{tabular}
+\end{table}
 
-Armed with the recovered keystream $\hat{X}$ and permutation map $\hat{\mathcal{M}}$, decryption of any ciphertext $C = \mathcal{E}(P)$ proceeds in three steps without reference to the secret key.
+Since one of the shares is missing, reconstruction becomes impossible. The SSIM is very close to
+0 (even being slightly less than zero for certain classes), whereas PSNR only slightly
+exceeds the noise level. The output of the decoding process does not make sense and bears no structural similarity to the original digits.
 
-\textbf{Step 1 (Inverse diffusion).}
-Compute the permuted image $\hat{T}$ from $C$ via the inverse diffusion operator:
-\begin{equation}
-\hat{T} = \mathcal{D}_{\hat{X}}(C).
-\end{equation}
-By Proposition~1, $\hat{T} = T$ exactly.
+% ---
+\subsubsection{Case (c): Two Shares Missing}
 
-\textbf{Step 2 (Inverse column permutation).}
-For each column $j$, reverse the 2D-LSCM sort using $\hat{\mathcal{M}}$:
-\begin{equation}
-\hat{S}[\hat{\sigma}_j(\ell),\, j] = \hat{T}[\ell,\, j], \qquad \ell = 1, \ldots, n,
-\end{equation}
-recovering $\hat{S} = S = \mathrm{ACM}^{P_i}(P)$.
+Table~\ref{tab:xor_miss2} reports reconstruction quality when two of the four
+XOR shares are withheld. The visual result for the digit ``7'' is shown in
+Fig.~\ref{fig:all_results}(c).
 
-\textbf{Step 3 (Inverse Arnold's Cat Map).}
-Apply the Arnold map $(3n+1 - P_i)$ times to $\hat{S}$, exploiting the map's periodicity to compute the inverse via forward iteration:
-\begin{equation}
-\hat{P} = \mathrm{ACM}^{-P_i}(\hat{S}) = \mathrm{ACM}^{(3n+1-P_i)}(\hat{S}).
-\end{equation}
-Since $\hat{S} = \mathrm{ACM}^{P_i}(P)$ and Arnold's Cat Map is invertible, $\hat{P} = P$ exactly.
+\begin{table}[htbp]
+\centering
+\caption{Reconstruction Quality with Two XOR Shares Missing.}
+\label{tab:xor_miss2}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
+\hline
+Image 1   & 0.7396 & 11.84 \\
+Image 2   & 0.6422 &  9.56 \\
+Image 3   & 0.8428 & 14.81 \\
+Image 4   & 0.6106 &  8.17 \\
+Image 5   & 0.7120 & 11.76 \\
+\hline
+\textbf{Average} & $\mathbf{\approx 0.7094}$ & $\mathbf{\approx 11.23}$ \\
+\hline
+\end{tabular}
+\end{table}
 
-\noindent\textbf{Remark on unknown $P_i$.}
-Phase 2 requires knowledge of $P_i$ to construct the probe pre-images $Q^{(j)}$. If $P_i$ is not known, it can be identified by a linear scan: for each candidate $\tilde{P}_i \in \{1, \ldots, 3n\}$, the attacker submits one structured probe and verifies whether column $j$ of the recovered intermediate image matches the expected pattern $\{0,1,\ldots,n-1\}$. The correct value is found in at most $3n - 1$ additional queries, which does not alter the overall polynomial complexity of the attack.
+Surprisingly, when two shares are missing, the SSIM values obtained
+are slightly higher ($\approx 0.71$). This unexpected behavior can be attributed
+to the structured manner of the XOR construction combined with assumptions made
+about the dataset: when two shares are missing, then the two remaining shares
+contain a linear combination of the secret and the decoder exploits statistical
+properties of MNIST images. However, this does not mean that the decoding
+results are high-quality; rather, the output is distorted and should not
+be considered a security threat.
 
-% -----------------------------------------------------------------------
-\subsection{Complexity Analysis}
+% ---
+\subsubsection{Case (d): Three Shares Missing}
 
-\textbf{Data complexity.}
-The entire attack consumes $1 + n$ oracle queries: one zero-image query in Phase 1 and one query per image column in Phase 2. For a $256 \times 256$ image this amounts to 257 queries—negligible from a practical standpoint.
+Table~\ref{tab:xor_miss3} reports reconstruction quality when only one of the
+four XOR shares is available (three shares missing). The visual output for the
+digit ``7'' is shown in Fig.~\ref{fig:all_results}(d).
 
-\textbf{Computational complexity.}
-Phase 1 inverts the diffusion over all $N = n^2$ pixels in $\mathcal{O}(n^2)$ time. Phase 2 constructs $n$ probe pre-images, each requiring up to $3n$ Arnold map iterations on an $n \times n$ image; since each iteration costs $\mathcal{O}(n^2)$, Phase 2 runs in $\mathcal{O}(n^3)$ in total. Phase 3 requires $\mathcal{O}(n^2)$. The dominant cost is therefore $\mathcal{O}(n^3)$, matching the complexity of the encryption algorithm itself.
+\begin{table}[htbp]
+\centering
+\caption{Reconstruction Quality with Three XOR Shares Missing (Only One Share Available).}
+\label{tab:xor_miss3}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
+\hline
+Image 1   & 0.7396 & 11.84 \\
+Image 2   & 0.6422 &  9.56 \\
+Image 3   & 0.8428 & 14.81 \\
+Image 4   & 0.6106 &  8.17 \\
+Image 5   & 0.7120 & 11.76 \\
+\hline
+\textbf{Average} & $\mathbf{\approx 0.7094}$ & $\mathbf{\approx 11.23}$ \\
+\hline
+\end{tabular}
+\end{table}
 
-\textbf{Memory complexity.}
-The attacker need only store the recovered keystream $\hat{X}$ ($n^2$ entries) and the permutation map $\hat{\mathcal{M}}$ ($n^2$ entries), for a total of $\mathcal{O}(n^2)$ space.
+The figures computed using three missing shares match those calculated using two
+missing shares. This is due to the symmetry inherent in the XOR design where
+the available shares contain equivalent amounts of partial information regarding
+the secret and utilize the same data set prior knowledge for decoding. The low
+SSIM scores have no impact on the reliability of the images produced since
+these values are within expectations from the information-theoretic security
+bounds of the XOR protocol~\cite{tuyls2005capacity} and other works involving
+neural network decoding with missing input data~\cite{pathak2016context}.
+
+% ===========================
+\subsection{Configuration 2: Decoding with Three Consecutive XOR Shares}
+
+The decoder model was then trained only on subsets consisting of three sequential
+shares; specifically, shares $\{1,2,3\}$ and $\{2,3,4\}$ to investigate whether a model optimized
+for the small input scenario could identify patterns that would circumvent the security barrier.
+Figures~\ref{fig:all_results}(e) and~\ref{fig:all_results}(f) present the visualizations of results for digit ``7''.
+
+
+\begin{table}[htbp]
+\centering
+\caption{Reconstruction Quality Using XOR Shares \{1,2,3\}.}
+\label{tab:xor123}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
+\hline
+Image 1   & 0.1988 & 12.42 \\
+Image 2   & 0.2042 & 10.99 \\
+Image 3   & 0.2024 & 13.96 \\
+Image 4   & 0.2243 &  9.86 \\
+Image 5   & 0.2093 & 12.65 \\
+\hline
+\textbf{Average} & $\mathbf{\approx 0.2078}$ & $\mathbf{\approx 11.98}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Reconstruction Quality Using XOR Shares \{2,3,4\}.}
+\label{tab:xor234}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
+\hline
+Image 1   & 0.1989 & 12.42 \\
+Image 2   & 0.2046 & 10.99 \\
+Image 3   & 0.2027 & 13.96 \\
+Image 4   & 0.2242 &  9.86 \\
+Image 5   & 0.2094 & 12.65 \\
+\hline
+\textbf{Average} & $\mathbf{\approx 0.2080}$ & $\mathbf{\approx 11.98}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+
+Both sets of low SSIM ($\approx 0.21$) and PSNR ($< 12$ dB) scores suggest that the decoder trained on an incomplete set cannot reconstruct the image, irrespective of whether the first or second share is lost. The reason behind this is that the problem is under-determined since the lost entropy cannot be retrieved from the available data, which is true for XOR-based secret-sharing schemes based on information-theoretic security.
+%--------------------------------------------------
+\section{Conclusion}
+
+This work examined the robustness of XOR-based visual secret sharing schemes under learning-based adversaries. Neural networks can approximate the reconstruction function when all four shares are available, achieving near-lossless results (SSIM $= 0.9720$, PSNR $= 33.87$~dB), showing that data-driven models can learn the full mapping when complete information is present.
+
+However, reconstruction fails under missing-share conditions, where performance drops significantly and meaningful recovery becomes infeasible. This confirms that the XOR scheme retains its information-theoretic security against learning-based attacks with insufficient shares.

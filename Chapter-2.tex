@@ -1,35 +1,577 @@
-\chapter{LITERATURE REVIEW}
-\justifying
+% ============================================================
+% CHAPTER: CRYPTANALYSIS OF IMAGE ENCRYPTION SCHEMES
+% Sections: Introduction & Preliminaries
+% ============================================================
 
-This chapter provides an extensive overview of existing research relevant to the three problem domains discussed in this work. The problem domains include: (i) log-based anomaly detection in distributed systems, (ii) secure image sharing and reconstruction using visual cryptography and learning-based methods, and (iii) cryptanalysis of chaos-based medical image encryption schemes. Although these problem domains address distinct problem contexts, they share common requirements with regard to learning representations from structured or semi-structured data and evaluating system security under advanced adversarial models. As such, this chapter is broadly divided into three sections, each covering one of these problem domains.
-%--------------------------------------------------
-\section{Anomaly Detection in Logs}
+\chapter{Cryptanalysis of a Medical Image Encryption Scheme Using Multiple Chaotic Maps}
 
-Log anomaly detection has been extensively studied as an important technique in guaranteeing reliability and security in large-scale distributed systems. Initially, researchers applied mining-based techniques to console logs using statistical and clustering-based approaches \cite{xu2009detecting, lou2010mining, makanju2009clustering}. However, such techniques heavily relied on structured log templates. To overcome this problem, researchers developed new techniques such as Drain \cite{he2017drain} and LogCluster \cite{vaarandi2015logcluster} to automatically parse structured log templates. In addition, researchers developed new tools to standardize parsing-based techniques \cite{zhu2019tools}. However, such techniques face challenges in terms of accuracy due to their dependency on parsing-based techniques.
+% ------------------------------------------------------------
+\section{Introduction}
+% ------------------------------------------------------------
 
-To overcome this problem, learning-based techniques were developed to detect anomalies in logs. DeepLog \cite{du2017deeplog} employed an LSTM neural network to model sequential dependencies in logs to perform anomaly detection by learning to predict the next event in the logs. LogAnomaly \cite{meng2019loganomaly} further improved DeepLog to detect sequential and quantitative anomalies in logs. The problem of performing robust detection in unstable logs has been addressed in \cite{zhang2019robust}. More recently, researchers have proposed new parsing-free techniques such as Log2Vec \cite{meng2020log2vec} and parsing-free anomaly detection frameworks \cite{neurallog2021}. The transformer-based technique has been developed to model logs based on the attention mechanism \cite{vaswani2017attention} and BERT-based contextual embedding techniques \cite{devlin2018bert}. The increasing importance of attention-based and large language models in log analysis is demonstrated by recent works like LAnoBERT \cite{lee2023lanobert}, LogFormer \cite{guo2024logformer}, and several LLM-based parsing studies \cite{wu2023effectiveness, le2023prompt, ma2024llmparser, jiang2024lilac, xu2024divlog, xiao2024logbatcher}. Extensive surveys \cite{landauer2023survey} emphasize the necessity of robust and structurally aware log representation techniques.
 
-\section{Attack on Secure Image Sharing Schemes using Autoencoders}
+Chaos-based image encryption schemes are widely used for securing medical images due to their ability to achieve high confusion and diffusion with relatively low computational cost. These schemes typically follow a \textit{permutation-diffusion} architecture, in which pixel positions are first scrambled and then pixel values are modified using a pseudorandom keystream generated from chaotic systems. Despite exhibiting strong statistical performance, many such schemes fail to provide adequate resistance against stronger adversarial models.
 
-The concept of secret image sharing was first motivated by the development of classical secret sharing schemes by Shamir \cite{shamir1979share}, which laid a theoretical foundation for secret sharing among multiple parties. Naor and Shamir \cite{naor1995visual} later extended this idea to visual cryptography for images. The main idea is to encode a secret image into a number of shares such that any qualified set of shares will reveal the secret image visually. However, any unqualified subset will reveal nothing. The problem of visual cryptography is that there is a loss in contrast and resolution. 
+This chapter presents a detailed cryptanalysis of a medical image encryption scheme that combines \textit{Arnold's Cat Map} and a \textit{Two-Dimensional Logistic Sine Coupling Map (2D-LSCM)}. The analysis is conducted under the \textbf{chosen-plaintext attack (CPA)} model, wherein the attacker has access to an encryption oracle. It is demonstrated that the keystream employed in the diffusion stage is independent of the plaintext, making it recoverable using a single carefully chosen input. Furthermore, the permutation process can be fully reconstructed using structured probe images. By combining the recovery of these two components, the complete encryption process can be inverted without any knowledge of the secret key.
 
-To address this problem, XOR-based secret image sharing schemes have been proposed. The XOR-based secret image sharing schemes operate on image pixels instead of bits. The XOR-based secret image sharing schemes use Shannon's perfect secrecy concept \cite{shannon1949communication} to guarantee perfect reconstruction of the secret image from all the shares. The XOR-based secret image sharing schemes also guarantee that any subset of shares is statistically independent of the secret image. This ensures that there is zero mutual information between any unqualified subset of shares and the secret image.
+The results demonstrate that the scheme is fundamentally insecure in spite of possessing a large key space and passing standard statistical tests. This highlights the critical importance of designing encryption algorithms in which keystream generation is dependent on the plaintext, and in which the permutation and diffusion stages are tightly coupled. The study offers insights into common structural weaknesses in chaos-based encryption and underscores the need for rigorous cryptanalysis when evaluating the security of such schemes.
 
-However, the security proofs for the XOR-based constructions assume the presence of adversaries without access to structural priors about natural images. Recent deep learning advances contradict this. Convolutional Neural Networks (CNNs) \cite{lecun1998gradient} have shown impressive performance in learning hierarchical spatial representations from image data. Architectural innovations such as batch normalization \cite{ioffe2015batch} improve the stability of the learning process, while encoder-decoder architectures, such as the U-Net \cite{ronneberger2015unet}, enable accurate reconstruction for inverse image problems. Autoencoders, when learned using pixel-wise reconstruction objectives, can extract compact feature representations that can reconstruct structured image information from corrupted images. Moreover, the use of Perceptual Loss functions \cite{johnson2016perceptual} can improve the reconstruction quality for images. The reconstruction quality for such images can be measured using full-reference image similarity measures. The Peak Signal-to-Noise Ratio (PSNR) can measure the pixel-wise fidelity of the reconstruction, while the Structural Similarity Index Measure (SSIM) \cite{wang2004image} can measure the structural similarity between images by comparing the luminance, contrast, and structural information.
+% ------------------------------------------------------------
+\section{Preliminaries}
+% ------------------------------------------------------------
 
-In spite of the solid theoretical foundation of secret sharing via XOR and the remarkable advancements in the field of image reconstruction via deep learning methods, only a few works have attempted to explore the possibility of reconstructing the secret image via learning the priors of images and utilizing only certain subsets of the shares generated via XOR operations. Most of the existing works have been dedicated to enhancing the efficiency and robustness of secret image sharing methods and verifying their feasibility rather than testing their robustness against learning-based attacks. This work attempts to bridge this gap and test the robustness of secret image sharing via XOR operations against learning-based attacks and determine whether the secret image can be reconstructed via learning the priors of images and utilizing only certain subsets of the shares generated via XOR operations.
+\subsection{Chaos-Based Image Encryption}
 
-\section{Cryptanalysis of Chaos-Based Image Encryption Schemes}
+\subsubsection{Motivation}
 
-Chaos-based image encryption has been widely studied due to its ability to achieve strong confusion and diffusion properties using nonlinear dynamical systems. Early work by Fridrich \cite{fridrich1998image} introduced the permutation-diffusion architecture based on chaotic maps, which has since become a standard design paradigm. In this framework, permutation is used to break spatial correlation among pixels, while diffusion ensures that small changes in the plaintext propagate across the ciphertext.
+Medical images and other sensitive visual data must be adequately protected prior to transmission or storage. Classical block ciphers such as AES operate on byte streams and do not exploit the inherent spatial structure of images. \textbf{Chaos-based encryption} offers a compelling alternative: it leverages the output of \emph{chaotic dynamical systems}---mathematical systems exhibiting deterministic yet unpredictable, highly sensitive behaviour---as keystreams to scramble image data.
 
-Several schemes have been proposed by combining different chaotic systems. Guan et al. \cite{guan2005chaos} utilized Arnold's Cat Map along with Chen's chaotic system to enhance permutation complexity. Wu et al. \cite{wu2012image} explored logistic maps for both permutation and diffusion processes. Later works incorporated higher-dimensional chaotic systems and hybrid approaches to improve randomness and enlarge the key space \cite{mursi2014image, hua2018lscm, jain2021medical}. These schemes often report strong statistical performance based on metrics such as entropy, correlation coefficients, NPCR, and UACI.
+\subsubsection{Properties of Chaotic Systems Relevant to Cryptography}
 
-Despite these improvements, a significant body of research has shown that many chaos-based encryption schemes suffer from fundamental security weaknesses. Xie et al. \cite{xie2017cryptanalysis} demonstrated vulnerabilities in permutation-diffusion structures due to insufficient coupling between stages. Cokal and Solak \cite{cokal2009cryptanalysis} showed that certain chaotic image ciphers are vulnerable to known-plaintext and chosen-plaintext attacks. More recent studies \cite{wen2023cryptanalysis, wen2024cryptanalysis, wen2023lin} have emphasized that plaintext-independent keystream generation is a major design flaw, as it allows attackers to recover equivalent keys using simple algebraic analysis.
+A chaotic system is characterised by the following properties, which make it attractive for generating cryptographic material:
 
-A recurring issue in many schemes is that the keystream used in the diffusion stage depends only on the secret key and not on the plaintext. This results in a reusable keystream, which is equivalent to a one-time pad used multiple times. Such designs are inherently vulnerable to chosen-plaintext attacks, where specially crafted inputs can be used to extract the keystream and invert the encryption process. Additionally, the separability of permutation and diffusion stages allows attackers to independently recover pixel mappings and value transformations.
+\begin{itemize}
+    \item \textbf{Sensitivity to initial conditions}: Infinitesimally small changes in the initial state (on the order of $10^{-15}$) lead to entirely different trajectories over time. This renders the generated sequence practically unpredictable without exact knowledge of the initial conditions, which serve as the secret key.
 
-The scheme proposed by Jain et al. \cite{jain2021medical}, which combines Arnold's Cat Map with a Two-Dimensional Logistic Sine Coupling Map, represents a recent attempt to improve security for medical image encryption. However, similar to earlier works, it does not incorporate plaintext-dependent key generation or sufficient coupling between stages. This makes it susceptible to structural cryptanalysis.
+    \item \textbf{Ergodicity}: The system visits all regions of its state space over time, ensuring that the generated sequence exhibits good statistical coverage and uniformity.
 
-The present work builds upon these observations and demonstrates a complete chosen-plaintext attack on such a scheme. By recovering the equivalent keystream using a zero plaintext and reconstructing the permutation mapping using structured probe images, the encryption can be fully inverted without knowledge of the secret key. This highlights the gap between statistical security evaluation and actual cryptographic robustness, reinforcing the need for rigorous cryptanalysis in the design of chaos-based image encryption schemes.
-%--------------------------------------------------
+    \item \textbf{Mixing property}: Nearby initial states rapidly spread across the entire state space, contributing to effective diffusion of information throughout the output sequence.
+\end{itemize}
+
+\subsubsection{Permutation-Diffusion Architecture}
+
+A typical chaos-based image encryption scheme follows a two-phase structure:
+
+\begin{itemize}
+    \item \textbf{Permutation Phase}: The spatial positions of pixels are rearranged using a chaotic map. The content of each pixel remains unchanged, but its location in the image is scrambled. This destroys the spatial correlations between adjacent pixels.
+
+    \item \textbf{Diffusion Phase}: The intensity values of pixels are modified using a chaotic keystream, typically via bitwise XOR operations. This ensures that a change in even a single plaintext pixel cascades into widespread changes throughout the ciphertext.
+\end{itemize}
+
+Together, permutation provides \emph{confusion} and diffusion provides \emph{spreading}, corresponding directly to Shannon's classical principles of secure cipher design~\cite{shannon1949}.
+
+\subsubsection{Arnold's Cat Map}
+
+\textbf{Arnold's Cat Map} is a classical area-preserving chaotic map widely used for pixel permutation in image encryption. For an image of size $n \times n$, it maps each pixel at position $(x,\, y)$ to a new position $(x',\, y')$ according to:
+\[
+\begin{pmatrix} x' \\ y' \end{pmatrix}
+=
+\begin{pmatrix} 1 & 1 \\ 1 & 2 \end{pmatrix}
+\begin{pmatrix} x \\ y \end{pmatrix}
+\bmod\; n.
+\]
+Each application of this map shuffles pixel positions in a deterministic yet seemingly random manner. Importantly, the map is \textit{periodic}: after a finite number of iterations, the image returns to its original configuration. This periodicity property is exploited both in the encryption process and in certain cryptanalytic attacks.
+
+\subsubsection{Two-Dimensional Logistic Sine Coupling Map (2D-LSCM)}
+
+The \textbf{Two-Dimensional Logistic Sine Coupling Map (2D-LSCM)} is a higher-dimensional chaotic system designed to overcome the limited chaotic range and non-uniform distribution of simple one-dimensional maps. It generates two mutually coupled chaotic sequences $\{x_i\}$ and $\{y_i\}$ via the following recurrence relations:
+\[
+\begin{cases}
+x_{i+1} = \sin\!\Bigl(\pi\bigl(4\theta\, x_i(1 - x_i) + (1 - \theta)\sin(\pi y_i)\bigr)\Bigr) \\[6pt]
+y_{i+1} = \sin\!\Bigl(\pi\bigl(4\theta\, y_i(1 - y_i) + (1 - \theta)\sin(\pi x_{i+1})\bigr)\Bigr)
+\end{cases}
+\]
+where $\theta \in (0, 1)$ is a coupling parameter that governs the balance between the logistic and sine components. The coupling between the two sequences produces a wider and more uniform chaotic range than either component alone. The output sequences serve as keystreams for both the permutation and diffusion phases of the encryption scheme.
+
+% ------------------------------------------------------------
+\subsection{Cryptanalysis of Image Encryption Schemes}
+% ------------------------------------------------------------
+
+\subsubsection{What is Cryptanalysis?}
+
+\textbf{Cryptanalysis} is the science of analysing encryption schemes to identify weaknesses that allow an adversary to recover plaintext or the secret key without legitimate authorisation. In the context of image encryption, successful cryptanalysis corresponds to recovering the original image from its encrypted form.
+
+\subsubsection{Attack Models}
+
+Different attack models assume varying levels of adversary capability. This work focuses primarily on the most powerful standard model used in symmetric cryptography.
+
+\paragraph{Chosen-Plaintext Attack (CPA).}
+In a \textbf{Chosen-Plaintext Attack}, the adversary is granted access to an \emph{encryption oracle}: a black box that, given any image the adversary selects, returns its encrypted counterpart. Formally:
+\[
+C = \mathcal{E}(P),
+\]
+where $P$ is a chosen plaintext image and $C$ is the resulting ciphertext. The adversary selects inputs strategically to extract information about the secret key or the internal structure of the cipher. Under modern cryptographic standards, any cipher that cannot withstand a CPA is considered insecure.
+
+\subsubsection{Exploiting Structural Weaknesses}
+
+Many chaos-based image encryption schemes exhibit specific structural weaknesses that render them vulnerable to chosen-plaintext attacks. The two most prevalent weaknesses are described below.
+
+\paragraph{Keystream Recovery via All-Zero Images.}
+If the diffusion phase XORs each pixel with a keystream value that is \emph{independent of the plaintext pixel values}, the keystream can be extracted trivially. By encrypting an all-zero image $P = \mathbf{0}$:
+\[
+C = \mathbf{0} \oplus K = K,
+\]
+the resulting ciphertext directly reveals the keystream $K$. This recovered keystream can subsequently be used to decrypt any ciphertext encrypted under the same key, completely breaking the scheme.
+
+\paragraph{Permutation Recovery via Structured Probe Images.}
+If the permutation and diffusion phases are applied independently (i.e., the permutation mapping does not depend on pixel values), the pixel permutation table can be recovered by encrypting specially crafted probe images. For example, an image containing exactly one non-zero pixel allows the adversary to observe precisely where that pixel is relocated after permutation. By repeating this process for each pixel position, the complete permutation mapping can be reconstructed.
+
+\subsubsection{Necessary Conditions for a Successful CPA Break}
+
+An encryption scheme is fully breakable under a chosen-plaintext attack if both of the following conditions hold:
+
+\begin{itemize}
+    \item The keystream used in the diffusion phase is \textbf{static} (independent of the plaintext), allowing it to be extracted directly as described above.
+    \item The permutation and diffusion operations are \textbf{independent} of each other and of the plaintext, allowing them to be recovered and reversed in isolation.
+\end{itemize}
+
+When both conditions are satisfied, an adversary can first recover the keystream, then reconstruct the permutation mapping, and thereby invert the entire encryption process with complete accuracy---without ever obtaining the secret key. This forms the theoretical foundation for the cryptanalytic methodology implemented in this project.
+% ------------------------------------------------------------
+\section{Literature Review}
+% ------------------------------------------------------------
+
+Chaos-based image encryption has been extensively studied owing to its ability to achieve strong confusion and diffusion properties through nonlinear dynamical systems. The foundational permutation-diffusion architecture was introduced by Fridrich~\cite{fridrich1998image}, in which chaotic maps drive both the spatial scrambling and the value transformation of pixels. This two-phase design has since become the dominant paradigm in the field: the permutation phase disrupts spatial correlations among adjacent pixels, while the diffusion phase ensures that local changes in the plaintext propagate globally across the ciphertext.
+
+Building on this framework, numerous schemes have been proposed by combining different chaotic systems to enhance complexity and enlarge the key space. Guan et al.~\cite{guan2005chaos} employed Arnold's Cat Map in conjunction with Chen's chaotic system to increase permutation complexity, while Wu et al.~\cite{wu2012image} explored logistic maps for both permutation and diffusion. Subsequent works incorporated higher-dimensional chaotic systems and hybrid approaches to improve randomness and statistical unpredictability~\cite{mursi2014image, hua2018lscm, jain2021medical}. These schemes are commonly evaluated using statistical metrics such as information entropy, inter-pixel correlation coefficients, Number of Pixel Change Rate (NPCR), and Unified Average Changing Intensity (UACI), and they typically report strong performance on all such measures.
+
+Despite these reported improvements, a substantial body of research has demonstrated that statistical strength does not imply cryptographic security. Cokal and Solak~\cite{cokal2009cryptanalysis} showed that certain chaotic image ciphers are vulnerable to known-plaintext and chosen-plaintext attacks due to weak coupling between encryption stages. Xie et al.~\cite{xie2017cryptanalysis} further exposed structural vulnerabilities in permutation-diffusion architectures arising from the independence of the two phases. More recent work by Wen et al.~\cite{wen2023cryptanalysis, wen2024cryptanalysis, wen2023lin} has systematically shown that plaintext-independent keystream generation constitutes a fundamental design flaw, as it enables adversaries to recover equivalent keys through straightforward algebraic analysis under a chosen-plaintext model.
+
+A recurring and critical weakness across many of these schemes is that the keystream used during the diffusion stage is derived solely from the secret key, with no dependence on the plaintext. This renders the keystream reusable across multiple encryptions---effectively reducing the scheme to a one-time pad applied repeatedly, a well-known cryptographic vulnerability. Under a chosen-plaintext attack, an adversary can exploit this property by querying the encryption oracle with carefully chosen inputs to extract the keystream and subsequently invert any ciphertext encrypted under the same key. Compounding this issue, the separability of the permutation and diffusion stages allows an attacker to independently recover the pixel position mapping and the value transformation, further simplifying the cryptanalysis.
+
+The scheme proposed by Jain et al.~\cite{jain2021medical}, which combines Arnold's Cat Map with a Two-Dimensional Logistic Sine Coupling Map for the purpose of medical image encryption, represents a recent effort to improve security in this domain. However, consistent with the structural patterns observed in prior work, it does not incorporate plaintext-dependent key generation, nor does it establish sufficient coupling between the permutation and diffusion stages. These omissions leave the scheme susceptible to the same class of structural chosen-plaintext attacks that have undermined earlier designs.
+
+The present work builds directly upon these observations. By recovering the equivalent keystream through encryption of an all-zero image and reconstructing the full permutation mapping using structured probe images, it is shown that the encryption process can be completely inverted without any knowledge of the secret key. This result underscores the persistent gap between statistical security evaluation and genuine cryptographic robustness, and reinforces the need for principled cryptanalysis---rather than statistical testing alone---in the assessment of chaos-based image encryption schemes.
+% ------------------------------------------------------------
+\section{Work Done}
+% ------------------------------------------------------------
+
+This work presents a complete cryptanalysis of the chaos-based medical image encryption scheme proposed by Jain et al.~\cite{jain2021medical}. The scheme employs a two-round permutation-diffusion structure using Arnold's Cat Map and a Two-Dimensional Logistic Sine Coupling Map (2D-LSCM). It is demonstrated that this structure provides no actual resistance against a chosen-plaintext adversary: both the equivalent keystream and the full permutation mapping can be extracted with a small number of oracle queries, after which any ciphertext may be decrypted without knowledge of the secret key.
+
+% -----------------------------------------------------------------------
+\subsection{Overview of the Target Encryption Scheme}
+
+Two distinct chaotic maps form the algorithmic backbone of the scheme. Arnold's Cat Map handles pixel-position shuffling during the permutation phase, while the 2D-LSCM drives keystream generation for the diffusion phase.
+
+\subsubsection{Two-Dimensional Logistic-Sine-Coupling Map (2D-LSCM)}
+
+The 2D-LSCM is constructed by coupling the one-dimensional logistic map with the one-dimensional sine map. The logistic map is given by
+\begin{equation}
+    x_{i+1} = r\, x_i(1 - x_i),
+\end{equation}
+where $r$ denotes the growth-rate parameter and $x_i \in (0,1)$. The sine map takes the form
+\begin{equation}
+    x_{i+1} = \alpha \sin(\pi x_i),
+\end{equation}
+with control parameter $\alpha \in [0,1]$. Coupling these two one-dimensional systems through a sine nonlinearity yields the 2D-LSCM:
+\begin{equation}
+\begin{cases}
+x_{i+1} = \sin\!\Bigl(\pi\bigl(4\theta\, x_i(1-x_i) + (1-\theta)\sin(\pi y_i)\bigr)\Bigr),\\[4pt]
+y_{i+1} = \sin\!\Bigl(\pi\bigl(4\theta\, y_i(1-y_i) + (1-\theta)\sin(\pi x_{i+1})\bigr)\Bigr),
+\end{cases}
+\end{equation}
+where $\theta \in [0,1]$ is the coupling control parameter. By operating in a substantially higher-dimensional phase space than either constituent map, the 2D-LSCM achieves greater ergodicity and a wider chaotic parameter range.
+
+\subsubsection{Arnold's Cat Map}
+
+Arnold's Cat Map is a classical area-preserving automorphism of the torus that, when applied to a square image, performs a deterministic reordering of pixel coordinates. For an image of size $n \times n$, the transformation is
+\begin{equation}
+\begin{pmatrix} x' \\ y' \end{pmatrix}
+=
+\begin{pmatrix} 1 & 1 \\ 1 & 2 \end{pmatrix}
+\begin{pmatrix} x \\ y \end{pmatrix} \bmod\; n,
+\end{equation}
+where $(x,y)$ and $(x',y')$ denote the pre-image and image pixel coordinates, respectively. The mapping is periodic with period $3n+1$, meaning that repeated application returns the image to its original state after exactly $3n+1$ iterations. The iteration count $P_i$, satisfying $1 < P_i < 3n+1$, constitutes the secret parameter $K_1$ for this component.
+
+% -----------------------------------------------------------------------
+\subsection{Encryption Process}
+
+Let $P$ be a plaintext image of dimensions $M \times N$. Encryption is organised as two consecutive rounds, each comprising a permutation phase followed by a diffusion phase.
+
+\subsubsection{Permutation}
+
+The permutation phase introduces confusion by relocating pixel positions under the joint action of both chaotic maps. Arnold's Cat Map is applied for $P_i$ iterations, and a chaotic matrix $X$ is constructed by iterating the 2D-LSCM; column-wise sorting of $X$ then yields a permutation index matrix that governs the final repositioning of pixel values, producing the permuted image $T$. Critically, $T$ depends exclusively on $X$ and $P_i$: no pixel value from $P$ influences the permutation itself.
+
+\subsubsection{Diffusion}
+
+The diffusion phase modifies pixel values so that any single-pixel change in the plaintext propagates throughout the ciphertext. Let $T$ be the permuted image and $X$ the chaotic matrix. For a linearised image sequence of length $O = M \times N$, the $i$-th encrypted pixel $E_i$ is computed as
+\begin{equation}
+E_i =
+\begin{cases}
+T_1 + T_O + T_{O-1} + X_i \bmod F, & i = 1,\\[4pt]
+T_2 + E_1 + T_O + X_i \bmod F, & i = 2,\\[4pt]
+T_i + E_{i-1} + E_{i-2} + X_i \bmod F, & i \geq 3,
+\end{cases}
+\label{eq:diffusion_enc}
+\end{equation}
+where $F = 255$ for 8-bit imagery and $X_i = \lfloor x_i \times 2^{32} \rfloor$ is the $i$-th element of the scaled chaotic sequence. The recursive dependence on $E_{i-1}$ and $E_{i-2}$ establishes an inter-pixel dependency chain that ensures downstream propagation of any modification. The complete permutation-diffusion cycle is applied for two rounds to yield the final ciphertext $C$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\linewidth]{images/target_methodology.png}
+\caption{Encryption process of the target scheme~\cite{jain2021medical}.}
+\label{fig:enc_process}
+\end{figure}
+
+% -----------------------------------------------------------------------
+\subsection{Chosen-Plaintext Attack Framework}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    block/.style={draw, rectangle, rounded corners=3pt, minimum width=3.2cm,
+                  minimum height=1cm, align=center, font=\small},
+    arrow/.style={->, thick}
+]
+\node[block] (input)   at (0,6)    {Chosen Plaintexts};
+\node[block] (oracle)  at (0,4.5)  {Encryption Oracle};
+\node[block] (cipher)  at (0,3)    {Cipher Outputs};
+\node[block] (ks)      at (-4,1.5) {Keystream\\Recovery};
+\node[block] (perm)    at (4,1.5)  {Permutation\\Recovery};
+\node[block] (decrypt) at (0,0)    {Decryption};
+\node[block] (out)     at (0,-1.5) {Recovered Image};
+
+\draw[arrow] (input)   -- (oracle);
+\draw[arrow] (oracle)  -- (cipher);
+\draw[arrow] (cipher)  -- (-4,2.2) -- (ks);
+\draw[arrow] (cipher)  -- ( 4,2.2) -- (perm);
+\draw[arrow] (ks)      -- (decrypt);
+\draw[arrow] (perm)    -- (decrypt);
+\draw[arrow] (decrypt) -- (out);
+\end{tikzpicture}
+\caption{Block diagram of the proposed chosen-plaintext attack: keystream recovery, permutation recovery, and final decryption without the secret key.}
+\label{fig:cpa}
+\end{figure}
+
+
+The adversary is assumed to have black-box access to an encryption oracle $\mathcal{E}(\cdot)$ that, given any $n \times n$ image $P$, returns the corresponding ciphertext $C = \mathcal{E}(P)$ under an unknown fixed key $(K_1, K_2)$. The adversary has no knowledge of any internal parameters: the initial conditions $x_0$, $y_0$, the coupling parameter $\theta$, the iteration count $P_i$, the chaotic matrix $X$, or the permutation map $\mathcal{M}$.
+
+The exploitable structural weakness is the \emph{plaintext-independence} of all key material. Because the 2D-LSCM sequence $\{x_i\}$ and the derived permutation map $\mathcal{M}$ are functions solely of the secret key---not of the image being encrypted---they remain identical across all encryptions of equal-sized images under the same key. This renders them static equivalent keys, a well-documented vulnerability class in chaos-based cipher design.
+
+The attack proceeds through three phases:
+\begin{enumerate}
+    \item \textbf{Phase 1 --- Keystream extraction} by encrypting an all-zero image.
+    \item \textbf{Phase 2 --- Permutation map reconstruction} via $n$ structured probe images.
+    \item \textbf{Phase 3 --- Full decryption} of any target ciphertext using the recovered parameters.
+\end{enumerate}
+
+The data complexity is $n + 1$ oracle queries for an $n \times n$ image, and the total computational cost is $\mathcal{O}(n^3)$, dominated by the Arnold map applications in Phase 2.
+
+\begin{algorithm}[H]
+\LinesNumbered
+\caption{Chosen-Plaintext Attack on the Target Scheme}
+\label{alg:cpa}
+\SetAlgoLined
+\KwIn{Encryption oracle $\mathcal{E}(\cdot)$; target ciphertext $C$; image size $n$.}
+\KwOut{Recovered plaintext $\hat{P}$.}
+\BlankLine
+\tcp{Phase 1: Keystream Recovery}
+$C^{(0)} \leftarrow \mathcal{E}(\mathbf{0}_{n \times n})$\;
+Compute $\hat{X}_i$ for all $i$ using Eq.~\eqref{eq:keystream_recovery}\;
+\BlankLine
+\tcp{Phase 2: Permutation Map Recovery}
+\For{$j = 1$ \KwTo $n$}{
+    Construct probe image $P^{(j)}$\;
+    \hspace{1em} Set $P^{(j)}_{r,j} \leftarrow r$ for all $r$\;
+    \hspace{1em} Set $P^{(j)}_{r,k} \leftarrow 0$ for all $k \neq j$\;
+    Compute $Q^{(j)} \leftarrow \mathrm{ACM}^{(3n+1-P_i)}\!\bigl(P^{(j)}\bigr)$\;
+    $C^{(j)} \leftarrow \mathcal{E}(Q^{(j)})$\;
+    $\hat{T}^{(j)} \leftarrow \mathcal{D}_{\hat{X}}(C^{(j)})$\;
+    $\hat{\sigma}_j \leftarrow \hat{T}^{(j)}[:,j]$\;
+}
+\BlankLine
+\tcp{Phase 3: Decryption of Target Ciphertext}
+$\hat{T} \leftarrow \mathcal{D}_{\hat{X}}(C)$\;
+\For{$j = 1$ \KwTo $n$}{
+    $\hat{S}[\hat{\sigma}_j(:),\; j] \leftarrow \hat{T}[:,j]$\;
+}
+$\hat{P} \leftarrow \mathrm{ACM}^{(3n+1-\tilde{P}_i)}(\hat{S})$\;
+\Return $\hat{P}$
+\end{algorithm}
+
+% -----------------------------------------------------------------------
+\subsection{Phase 1: Keystream Recovery via a Zero Plaintext}
+
+This phase exploits the encryption of an all-zero image to decouple the diffusion layer from the permutation layer and directly expose the keystream.
+
+\subsubsection{Structural Observation}
+
+Let $\mathbf{0}$ denote the $n \times n$ all-zero image and let $C^{(0)} = \mathcal{E}(\mathbf{0})$.
+
+\paragraph{Step 1: Arnold's Cat Map acts as the identity on a zero image.}
+Arnold's Cat Map permutes pixel \emph{coordinates} while leaving pixel \emph{values} unchanged. Since every pixel of $\mathbf{0}$ carries the value zero, the map produces the same all-zero image regardless of the iteration count:
+\begin{equation}
+    \mathrm{ACM}^{P_i}(\mathbf{0}) = \mathbf{0}.
+\end{equation}
+
+\paragraph{Step 2: The 2D-LSCM column permutation acts as the identity on a zero image.}
+The column-wise permutation step rearranges rows within column $j$ according to a permutation $\sigma_j$ derived from chaotic matrix $X$. When $P = \mathbf{0}$, every element selected by the permutation equals zero, giving:
+\begin{equation}
+    T^{(0)} = \mathbf{0}.
+\end{equation}
+
+\paragraph{Step 3: Diffusion collapses to a pure keystream recurrence.}
+With $T^{(0)}_i = 0$ for all $i$, the diffusion equation~\eqref{eq:diffusion_enc} simplifies to:
+\begin{align}
+    C^{(0)}_1 &= X_1, \\
+    C^{(0)}_2 &= \bigl(X_1 + X_2\bigr) \bmod F, \\
+    C^{(0)}_i &= \bigl(C^{(0)}_{i-1} + C^{(0)}_{i-2} + X_i\bigr) \bmod F, \quad i \geq 3.
+\end{align}
+Rearranging yields the keystream recovery formula:
+\begin{equation}
+\boxed{
+\hat{X}_i =
+\begin{cases}
+C^{(0)}_1, & i = 1,\\[4pt]
+\bigl(C^{(0)}_2 - C^{(0)}_1\bigr) \bmod F, & i = 2,\\[4pt]
+\bigl(C^{(0)}_i - C^{(0)}_{i-1} - C^{(0)}_{i-2}\bigr) \bmod F, & i \geq 3.
+\end{cases}
+}
+\label{eq:keystream_recovery}
+\end{equation}
+
+\subsubsection{Correctness of Keystream Recovery}
+
+\begin{proposition}
+Every value $\hat{X}_i$ recovered by Eq.~\eqref{eq:keystream_recovery} satisfies $\hat{X}_i = X_i$ for all $i = 1, \ldots, N$.
+\end{proposition}
+
+\begin{proof}
+For $i = 1$: directly, $\hat{X}_1 = C^{(0)}_1 = X_1$.
+For $i = 2$: $\hat{X}_2 = (C^{(0)}_2 - C^{(0)}_1) \bmod F = X_2$.
+For $i \geq 3$: by induction, assuming $\hat{X}_k = X_k$ for all $k < i$, it follows that
+$\hat{X}_i = (C^{(0)}_i - C^{(0)}_{i-1} - C^{(0)}_{i-2}) \bmod F = X_i$.
+\end{proof}
+
+The complete keystream is thus recovered exactly from a \emph{single} oracle query.
+
+% -----------------------------------------------------------------------
+\subsection{Phase 2: Permutation Map Reconstruction}
+
+With the keystream $\{\hat{X}_i\}$ in hand, the full permutation map $\mathcal{M}$ is reconstructed using exactly $n$ additional oracle queries.
+
+\subsubsection{Permutation Structure}
+
+From the encryption process, the permutation stage applies Arnold's Cat Map for $P_i$ iterations and then performs a column-wise sorting step driven by the chaotic matrix $X$. Specifically, for column $j$, if $\sigma_j = \mathrm{argsort}(X[:,j])$ is the permutation induced by sorting that column, the permuted output satisfies
+\begin{equation}
+    T[:,j] = S[\sigma_j,\; j],
+\end{equation}
+where $S = \mathrm{ACM}^{P_i}(P)$. The attacker seeks to determine $\mathcal{M}[:,j] = \sigma_j$ for every column $j$.
+
+\subsubsection{Probe Plaintext Design}
+
+For each column index $j \in \{1, \ldots, n\}$, a probe image $P^{(j)}$ is constructed such that column $j$ encodes the row-index sequence $0, 1, \ldots, n-1$ and every other column is identically zero:
+\begin{equation}
+P^{(j)}_{r,c} =
+\begin{cases}
+r, & c = j,\\
+0, & c \neq j.
+\end{cases}
+\end{equation}
+To neutralise the Arnold preprocessing, the probe submitted to the oracle is the $P_i$-step pre-image of $P^{(j)}$ under the Arnold map, exploiting the map's periodicity:
+\begin{equation}
+    Q^{(j)} = \mathrm{ACM}^{-P_i}\!\bigl(P^{(j)}\bigr) = \mathrm{ACM}^{(3n+1-P_i)}\!\bigl(P^{(j)}\bigr).
+\end{equation}
+
+\subsubsection{Oracle Output and Permutation Recovery}
+
+When the oracle processes $Q^{(j)}$, the Arnold step undoes the pre-imaging, so that the effective input to the column-sort is precisely $P^{(j)}$. Since column $j$ of $P^{(j)}$ encodes the row indices $r$, the column-sort directly reads out the permutation:
+\begin{equation}
+    T^{(j)}[\ell,\; j] = \sigma_j(\ell), \qquad \ell = 1, \ldots, n.
+\end{equation}
+All other columns are zero and carry no extraneous information. The oracle applies diffusion to yield $C^{(j)} = \mathcal{E}(Q^{(j)})$. Inverting the diffusion using the recovered $\hat{X}$:
+\begin{equation}
+\hat{T}^{(j)}_i =
+\begin{cases}
+\bigl(C^{(j)}_1 - C^{(j)}_{N} - C^{(j)}_{N-1} - \hat{X}_1\bigr) \bmod F, & i = 1,\\[4pt]
+\bigl(C^{(j)}_2 - C^{(j)}_1 - C^{(j)}_{N} - \hat{X}_2\bigr) \bmod F, & i = 2,\\[4pt]
+\bigl(C^{(j)}_i - C^{(j)}_{i-1} - C^{(j)}_{i-2} - \hat{X}_i\bigr) \bmod F, & i \geq 3,
+\end{cases}
+\label{eq:inv_diff_probe}
+\end{equation}
+from which the permutation indices for column $j$ are read directly:
+\begin{equation}
+    \hat{\sigma}_j(\ell) = \hat{T}^{(j)}[\ell,\; j], \qquad \ell = 1, \ldots, n.
+\end{equation}
+Iterating over all $j = 1, \ldots, n$ completes the reconstruction of $\hat{\mathcal{M}}$.
+
+\begin{proposition}
+The recovered map satisfies $\hat{\mathcal{M}} = \mathcal{M}$ exactly.
+\end{proposition}
+
+\begin{proof}
+The probe design guarantees $T^{(j)}[\ell,j] = \sigma_j(\ell)$. Since Proposition~1 guarantees $\hat{X}_i = X_i$ for all $i$, the inverse diffusion in Eq.~\eqref{eq:inv_diff_probe} recovers $\hat{T}^{(j)} = T^{(j)}$ without error, from which $\hat{\sigma}_j = \sigma_j$ for every column $j$.
+\end{proof}
+
+% -----------------------------------------------------------------------
+\subsection{Phase 3: Complete Decryption of Arbitrary Ciphertexts}
+
+Armed with the recovered keystream $\hat{X}$ and permutation map $\hat{\mathcal{M}}$, decryption of any ciphertext $C = \mathcal{E}(P)$ proceeds in three steps without any reference to the secret key.
+
+\paragraph{Step 1: Inverse diffusion.}
+Compute the permuted image $\hat{T}$ from $C$ via the inverse diffusion operator:
+\begin{equation}
+    \hat{T} = \mathcal{D}_{\hat{X}}(C).
+\end{equation}
+By Proposition~1, $\hat{T} = T$ exactly.
+
+\paragraph{Step 2: Inverse column permutation.}
+For each column $j$, reverse the 2D-LSCM sort using $\hat{\mathcal{M}}$:
+\begin{equation}
+    \hat{S}[\hat{\sigma}_j(\ell),\; j] = \hat{T}[\ell,\; j], \qquad \ell = 1, \ldots, n,
+\end{equation}
+recovering $\hat{S} = S = \mathrm{ACM}^{P_i}(P)$.
+
+\paragraph{Step 3: Inverse Arnold's Cat Map.}
+Apply the Arnold map $(3n+1-P_i)$ times to $\hat{S}$, exploiting the map's periodicity to compute the inverse via forward iteration:
+\begin{equation}
+    \hat{P} = \mathrm{ACM}^{-P_i}(\hat{S}) = \mathrm{ACM}^{(3n+1-P_i)}(\hat{S}).
+\end{equation}
+Since $\hat{S} = \mathrm{ACM}^{P_i}(P)$ and Arnold's Cat Map is invertible, it follows that $\hat{P} = P$ exactly.
+
+\paragraph{Remark on unknown $P_i$.}
+Phase 2 requires knowledge of $P_i$ to construct the probe pre-images $Q^{(j)}$. If $P_i$ is unknown, it can be identified by a linear scan: for each candidate $\tilde{P}_i \in \{1, \ldots, 3n\}$, the attacker submits one structured probe and verifies whether column $j$ of the recovered intermediate image matches the expected pattern $\{0, 1, \ldots, n-1\}$. The correct value is found in at most $3n-1$ additional queries, which does not alter the overall polynomial complexity of the attack.
+
+% -----------------------------------------------------------------------
+\subsection{Complexity Analysis}
+
+\paragraph{Data complexity.}
+The entire attack consumes $1 + n$ oracle queries: one zero-image query in Phase~1 and one query per image column in Phase~2. For a $256 \times 256$ image this amounts to 257 queries---negligible in practice.
+
+\paragraph{Computational complexity.}
+Phase~1 inverts the diffusion over all $N = n^2$ pixels in $\mathcal{O}(n^2)$ time. Phase~2 constructs $n$ probe pre-images, each requiring up to $3n$ Arnold map iterations on an $n \times n$ image; since each iteration costs $\mathcal{O}(n^2)$, Phase~2 runs in $\mathcal{O}(n^3)$ in total. Phase~3 requires $\mathcal{O}(n^2)$ operations. The dominant cost is therefore $\mathcal{O}(n^3)$, matching the computational complexity of the encryption algorithm itself.
+
+\paragraph{Memory complexity.}
+The attacker need only store the recovered keystream $\hat{X}$ ($n^2$ entries) and the permutation map $\hat{\mathcal{M}}$ ($n^2$ entries), requiring $\mathcal{O}(n^2)$ space in total.
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Results and Analysis}
+\label{sec:crypto-results}
+% ─────────────────────────────────────────────────────────────────────────────
+
+This section presents the experimental validation of the proposed chosen-plaintext attack (CPA) on the chaos-based medical image encryption scheme of Jain et al.~\cite{jain2021medical}. The objective is to demonstrate that the scheme can be completely broken under CPA conditions using a minimal number of oracle queries, despite its strong statistical properties.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Experimental Setup}
+% ─────────────────────────────────────────────────────────────────────────────
+
+All experiments were conducted in Python~3 on a $256 \times 256$ grayscale Cameraman benchmark image. The attacker is assumed to have black-box access to the encryption oracle $\mathcal{E}(\cdot)$ only, with no knowledge of the secret key. The oracle operates under the following hidden parameters:
+\[
+K_1 = P_i = 10, \qquad K_2 = \{\,x_0 = 0.8,\; y_0 = 0.5,\; \theta = 0.99\,\}
+\]
+The attack is conducted in three sequential phases — keystream recovery, permutation map recovery, and full decryption — each described and analyzed below.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Phase 1: Keystream Recovery}
+% ─────────────────────────────────────────────────────────────────────────────
+
+A zero-valued plaintext image is submitted to the oracle to obtain the corresponding ciphertext $C^{(0)}$. Since XOR-ing the keystream against an all-zero input leaves the keystream unmasked, the full keystream $\hat{X}$ is recovered directly from $C^{(0)}$ using a single oracle query. Table~\ref{tab:keystream} reports the recovery performance.
+
+\begin{table}[H]
+\centering
+\caption{Keystream Recovery Performance}
+\label{tab:keystream}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Oracle queries used    & 1 \\
+Total values recovered & 65,536 \\
+Perfect match          & \textbf{True} \\
+Maximum deviation      & 0 \\
+Mean deviation         & 0.000000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All 65,536 keystream values — corresponding to every pixel of the $256 \times 256$ image — were recovered exactly using a single oracle query, with zero deviation from the ground-truth keystream. This confirms that the additive keystream layer of the scheme provides no resistance to a zero-plaintext probe.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Phase 2: Permutation Map Recovery}
+% ─────────────────────────────────────────────────────────────────────────────
+
+To recover the pixel permutation map, a set of structured probe images is constructed. Each probe image isolates a single column by setting all pixels in that column to a known nonzero value while leaving the remaining pixels at zero. By submitting all 256 such probes to the oracle and inverting the keystream from Phase~1, the destination of every pixel under the permutation can be inferred directly. Table~\ref{tab:permutation} reports the recovery performance.
+
+\begin{table}[H]
+\centering
+\caption{Permutation Map Recovery Performance}
+\label{tab:permutation}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Oracle queries used & 256 \\
+Columns recovered   & 256/256 \\
+Perfect match       & \textbf{True} \\
+Maximum deviation   & 0 \\
+Mean deviation      & 0.000000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The complete $256 \times 256$ permutation map was recovered without error using exactly 256 oracle queries — one per image column. The independence of the permutation and keystream layers means that each can be recovered sequentially without interference, a structural weakness that this phase directly exploits.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Phase 3: Full Decryption}
+% ─────────────────────────────────────────────────────────────────────────────
+
+With both the keystream $\hat{X}$ and the permutation map fully recovered, decryption of any target ciphertext proceeds without further oracle interaction. Given a ciphertext $C$, the recovered plaintext $\hat{P}$ is obtained by first inverting the XOR keystream layer and then applying the inverse permutation map. No additional oracle queries are required at this stage. Table~\ref{tab:decryption} reports the decryption accuracy.
+
+\begin{table}[H]
+\centering
+\caption{Full Decryption Accuracy}
+\label{tab:decryption}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total oracle queries used        & 257 \\
+Exact recovery ($\hat{P} = P$)   & \textbf{True} \\
+Maximum pixel difference         & 0 \\
+Mean pixel difference            & 0.000000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The recovered image is pixel-for-pixel identical to the original plaintext, with zero maximum and mean pixel deviation. Figure~\ref{fig:cpa_result_res} illustrates the attack outcome visually: the encrypted image appears as noise with no discernible structure, yet the proposed attack recovers the original plaintext exactly.
+
+\begin{figure}[H]
+\centering
+\subfloat[Original image]{\includegraphics[width=0.45\textwidth]{images/cameraman.png}}
+\hfill
+\subfloat[Encrypted image]{\includegraphics[width=0.45\textwidth]{images/encrypted_image.png}}
+
+\vspace{0.5cm}
+
+\subfloat[Zero-image ciphertext $C^{(0)}$]{\includegraphics[width=0.45\textwidth]{images/allZeroImageEnc.png}}
+\hfill
+\subfloat[Recovered plaintext $\hat{P}$]{\includegraphics[width=0.45\textwidth]{images/cameraman.png}}
+
+\caption{Chosen-plaintext attack results. Despite the visually secure appearance of the ciphertext, the proposed attack achieves exact pixel-level reconstruction of the original image using only 257 oracle queries.}
+\label{fig:cpa_result_res}
+\end{figure}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Overall Attack Summary}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Table~\ref{tab:attack_summary} consolidates the query cost and recovery accuracy across all three phases of the attack.
+
+\begin{table}[H]
+\centering
+\caption{Summary of the Chosen-Plaintext Attack}
+\label{tab:attack_summary}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Phase} & \textbf{Oracle Queries} & \textbf{Items Recovered} & \textbf{Accuracy} \\
+\midrule
+Keystream recovery  & 1   & 65,536 keystream values     & Exact \\
+Permutation recovery & 256 & $256 \times 256$ pixel map  & Exact \\
+Decryption          & 0   & Full plaintext image         & Exact \\
+\midrule
+\textbf{Total}      & \textbf{257} & \textbf{---}        & \textbf{Exact} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The entire scheme is broken using only $n + 1 = 257$ oracle queries, where $n = 256$ is the image width in pixels. The total query count grows linearly with image dimension, confirming that the attack scales efficiently to larger images. Crucially, zero additional queries are needed at decryption time — once the keystream and permutation map are known, arbitrary ciphertexts can be decrypted instantaneously.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Discussion}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Three important conclusions emerge from these results.
+
+\textbf{Complete cryptographic break under CPA.} The scheme is fully broken using only $n + 1$ chosen-plaintext queries. The underlying vulnerability is structural: the keystream and permutation layers are independent and deterministic given the key, allowing each to be recovered separately without solving for the key itself. This reduces the effective security of the scheme to the resistance of its oracle interface, which provides no protection against structured probing.
+
+\textbf{Perfect plaintext reconstruction.} The recovered image is pixel-for-pixel identical to the original plaintext across all experiments. A maximum pixel difference of zero confirms that the attack introduces no approximation error — it is an exact, algebraic break rather than a statistical one.
+
+\textbf{Disconnect between statistical and cryptographic security.} The scheme of Jain et al.~\cite{jain2021medical} reports strong statistical metrics — high entropy, high NPCR, and low UACI values — which are standard indicators of confusion and diffusion quality. However, these metrics evaluate the appearance of ciphertext, not resistance to structured attacks. This result reinforces a well-established principle in cryptanalysis: favorable statistical properties are necessary but not sufficient for cryptographic security. A scheme that passes all standard statistical tests may still be trivially breakable under CPA if its structure admits efficient keystream or permutation recovery, as demonstrated here.
