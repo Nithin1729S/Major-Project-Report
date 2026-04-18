@@ -1,480 +1,1002 @@
 % ─────────────────────────────────────────────────────────────────────────────
-\chapter{Vulnerability Assessment of XOR-Based Secret Image Sharing Schemes Against Autoencoder Based Reconstruction Attacks}
+\chapter{Cryptanalysis of Multi-Chaos-Based Image Encryption for IoT Using Chosen Plaintext Attacks}
 % ─────────────────────────────────────────────────────────────────────────────
 
 \section{Introduction}
 
-Secret image sharing schemes distribute a confidential image $S$ among $n$ participants by creating shares $\{s_1, s_2, ..., s_n\}$. To reconstruct $S$, a qualified subset of shares is required. XOR-based schemes achieve this with perfect secrecy; any strict subset of shares is statistically independent of the secret. They also avoid pixel expansion, making them efficient for practical use. However, this information-theoretic guarantee assumes that adversaries are computationally unbounded and have no prior knowledge of natural image statistics. Modern deep learning models can exploit these statistical patterns. This raises the question whether a learning-based adversary can reconstruct a meaningful approximation of $S$ from a limited subset of its XOR shares.
+Recently, a lightweight multiple map chaos based image encryption algorithm (MMCBIE) was presented by Jain et al.\cite{jain2024mmcbie}, which can be used for image security in Internet of Things applications. This image encryption algorithm utilizes Henon chaotic transform, key mixing technique, and two dimensional logistic chaotic transform in a permutation diffusion architecture. It claims to offer resistance to statistical and differential attacks on image data. In this paper, a cryptanalysis of this image encryption algorithm reveals that it is highly vulnerable to a chosen plaintext attack.
 
-This project examines this threat by proposing an autoencoder-based reconstruction attack targeting XOR-generated secret shares. An encoder-decoder network with skip connections is trained to recover the secret image from a consecutive subset of $k < n$ shares, without needing any cryptographic key material or the remaining shares. The attack uses learned priors about natural image structures such as edges, textures, and semantic content to compensate for missing cryptographic information. The framework is evaluated across various benchmark image datasets using PSNR and SSIM as metrics for fidelity.
+The new technique takes advantage of the fact that the algorithm under consideration has a deterministic and separable structure. The chosen plaintexts for the attack consist of images of constant values, and the obtained ciphertexts are compared. In the light of poor pixel-level diffusion and repetitive cycling during the key mixing phase, identical input values will yield similar output patterns, which will facilitate plaintext recovery through direct equality matching.
+
+More precisely, this attack takes advantage of the channel dependency that was incorporated in the key mixing process; each color channel was generated from the other using the same modular addition operation. Through the study of equality relationships among ciphertexts based on selected inputs, it is possible to reverse-engineer the plaintext pixels without decrypting the chaotic sequences or secret keys.
+
+The attack needs at most 256 queries to an oracle, and the complexity is linear with respect to the number of pixels. Experimental results confirm the success of recovering the original image using the proposed attack. The results prove that the scheme of MMCBIE is not secure against CPA and lacks the inter-pixel/inter-channel dependencies required in chaos-based cryptosystems.
 
 \section{Preliminaries}
 \label{sec:lad-prelim}
 
+\subsection{Chaotic Maps}
+\label{subsec:chaotic_maps}
 
-Suppose a highly sensitive image — such as a medical scan or a classified photograph — needs to be stored across multiple servers. Storing the full image on any single server is risky: if that server is compromised, the secret is exposed. \textbf{Secret image sharing (SIS)} solves this by splitting the image into multiple pieces called \textbf{shares}, such that:
+MMCBIE is based on two types of chaotic maps.
+H\'enon chaotic map is used for the first transformation phase 
+through confusing the pixel values using pixel-wise XOR process.
+The last diffusion stage uses the Two-Dimensional Logistic Chaotic
+Map (2D-LSCM) using the same XOR process. 
+Key-mixing step is placed between the two phases deterministically.
 
-\begin{itemize}
-    \item Any sufficiently large subset of shares can \emph{perfectly reconstruct} the original image.
-    \item Any smaller subset of shares reveals \emph{absolutely nothing} about the original image.
-\end{itemize}
+\subsubsection{H\'enon Chaotic Map}
 
-This is sometimes called a \textbf{threshold scheme}.
+The H\'enon map~\cite{henon1976map} is a classical two-dimensional
+discrete-time chaotic system defined by the recurrence
+\begin{equation}
+    x_{i+1} = 1 - a\,x_i^2 + y_i,
+    \label{eq:henon_x}
+\end{equation}
+\begin{equation}
+    y_{i+1} = b\,x_i,
+    \label{eq:henon_y}
+\end{equation}
+with $x_i, y_i \in \mathbb{R}$ as the state variables of iteration
+$i$, and $a,b$ as system parameters.
+In case of standard values $a = 1.4$, $b = 0.3$ the map shows
+chaotic behaviour in its dynamics with strange attractor;
+for the purposes of MMCBIE scheme, these structural constants are kept fixed,
+and only the initial state $(x_0,y_0)$ is considered secret.
+Chaos matrix is then obtained from the dynamical sequence
+$(x_i, y_i)_{i=1}^{MN}$ by means of the quantization method
+\begin{equation}
+    H_{r,c}
+    = \Bigl\lfloor
+        \bigl(\lvert x_i \rvert + \lvert y_i \rvert\bigr)
+        \times 2^{16}
+      \Bigr\rfloor \bmod 256,
+    \qquad i = (r-1)N + c,
+    \label{eq:henon_quant}
+\end{equation}
+where indices $(r,c)$ run over rows and columns of the image
+respectively.
 
-\subsection{The $(k, n)$-Threshold Scheme}
+\subsubsection{Two-Dimensional Logistic Chaotic Map (2D-LSCM)}
 
-Formally, a $(k, n)$-threshold SIS scheme divides a secret image $S$ into $n$ shares:
-\[
-\{s_1,\, s_2,\, \ldots,\, s_n\}
-\]
-with the following guarantees:
-
-\begin{itemize}
-    \item \textbf{Reconstruction}: Any $k$ or more shares suffice to reconstruct $S$ exactly.
-    \item \textbf{Security}: Any collection of fewer than $k$ shares is statistically independent of $S$ — no information is leaked.
-\end{itemize}
-
-For example, in a $(3, 5)$ scheme, the secret is split into 5 shares distributed across 5 servers. Any 3 servers can collaborate to recover the secret, but any 2 servers (even acting together) learn nothing. This provides both \emph{redundancy} (against server failure) and \emph{security} (against server compromise).
-
-\subsection{Security Assumptions and Their Limitations}
-
-The information-theoretic security guarantee above assumes that shares are analyzed \emph{only} through classical combinatorial means. However, modern deep learning models can sometimes extract partial information by detecting subtle statistical patterns across shares — an assumption that this project explicitly tests and challenges.
-
-% ─────────────────────────────────────────────────────────────────────────────
-\section{Autoencoders}
-% ─────────────────────────────────────────────────────────────────────────────
-
-\subsection{What is an Autoencoder?}
-
-An \textbf{autoencoder} is a neural network trained to reproduce its own input at the output. At first glance this seems trivial — why train a network to copy an input? The key insight is that the network is forced to pass the information through a \textbf{bottleneck}: a hidden layer with far fewer dimensions than the input. To reconstruct the input faithfully despite this bottleneck, the network is forced to learn a \emph{compact, meaningful representation} of the data.
-
-\begin{figure}[h]
-\centering
-\begin{minipage}{0.8\textwidth}
-\centering
-\texttt{Input $\xrightarrow{\text{Encoder}}$ Latent Code $\xrightarrow{\text{Decoder}}$ Reconstructed Output}
-\end{minipage}
-\end{figure}
-
-\subsection{Architecture}
-
-An autoencoder consists of five conceptual stages:
-
-\begin{enumerate}
-    \item \textbf{Input Layer}: Receives the raw data (e.g., a flattened image or a sequence of token embeddings).
-    \item \textbf{Encoder}: A stack of layers that progressively compresses the input into a lower-dimensional space. Each layer applies a learned linear transformation followed by a nonlinear activation function.
-    \item \textbf{Latent Space} (Bottleneck): The compressed representation $\mathbf{z}$ of the input. This is the most information-dense part of the network. A well-trained encoder maps semantically similar inputs to nearby points in latent space.
-    \item \textbf{Decoder}: A symmetric stack of layers that expands the latent code back to the original input dimensionality.
-    \item \textbf{Output Layer}: Produces the reconstructed input $\hat{x}$.
-\end{enumerate}
-
-\subsection{Training Objective}
-
-Autoencoders are trained in an \textbf{unsupervised} fashion — no labels are required. The training objective is to minimize the \textbf{reconstruction error} between the input $x$ and the output $\hat{x}$, typically measured by the Mean Squared Error (MSE):
-\[
-\mathcal{L}(x, \hat{x}) = \frac{1}{N} \sum_{i=1}^{N} (x_i - \hat{x}_i)^2
-\]
-where $N$ is the number of elements (e.g., pixels). In the context of this project, autoencoders are used to learn mappings from image shares back to the original secret image, thereby assessing whether the information-theoretic security of SIS schemes holds under deep learning attacks.
-
-% ─────────────────────────────────────────────────────────────────────────────
-\section{Image Quality Evaluation Metrics}
-% ─────────────────────────────────────────────────────────────────────────────
-
-To evaluate how faithfully a reconstructed image matches the original, two standard metrics are used.
-
-\subsection{Peak Signal-to-Noise Ratio (PSNR)}
-
-\textbf{PSNR} is derived from the MSE between the original and reconstructed images. It is expressed in decibels (dB) and measures the ratio of the maximum possible signal power to the power of the distortion (noise):
-\[
-\text{PSNR} = 10 \cdot \log_{10}\!\left(\frac{\text{peakval}^2}{\text{MSE}}\right)
-\]
-where $\text{peakval}$ is the maximum pixel value (255 for 8-bit images). A \textbf{higher PSNR} means the reconstruction is closer to the original. Typical values above 30 dB are considered good quality, while values below 20 dB indicate significant degradation.
-
-\subsection{Structural Similarity Index Measure (SSIM)}
-
-MSE and PSNR treat each pixel independently, which does not always align with human visual perception. \textbf{SSIM} addresses this by comparing images along three perceptual dimensions simultaneously: \emph{luminance} (overall brightness), \emph{contrast} (variation in brightness), and \emph{structure} (spatial patterns of pixel intensities). The result is a score in the range $[0, 1]$:
-
-\begin{itemize}
-    \item A value of \textbf{1} indicates the two images are structurally identical.
-    \item A value of \textbf{0} indicates no structural similarity whatsoever.
-\end{itemize}
-
-SSIM is preferred over PSNR when perceptual quality is important, since two images can have the same MSE but look very different to a human observer.
-
-
+The 2D-LSCM employed by MMCBIE~\cite{hua2019cosine} is a coupled
+nonlinear recurrence given by
+\begin{equation}
+    x_{i+1} = r\,(3\,y_i + 1)\,x_i\,(1 - x_i),
+    \label{eq:lscm_x}
+\end{equation}
+\begin{equation}
+    y_{i+1} = r\,(3\,x_{i+1} + 1)\,y_i\,(1 - y_i),
+    \label{eq:lscm_y}
+\end{equation}
+where $(x_i, y_i) \in (0,1)^2$ and $r$ is the chaotic control
+parameter.
+The authors recommend the range $r \in [1.11, 1.19]$ to ensure
+optimal chaotic behaviour~\cite{hua2019cosine}.
+The warm-up process consists of an iteration of 500 steps that precedes
+the collection of output values for transient effects removal.
+A chaos matrix $L \in \{0,\ldots,255\}^{M \times N}$ is built
+from the trajectory $(x_i, y_i)_{i=1}^{MN}$ using the same
+quantisation rule as Eq.~\eqref{eq:henon_quant}:
+\begin{equation}
+    L_{r,c}
+    = \Bigl\lfloor
+        \bigl(\lvert x_i \rvert + \lvert y_i \rvert\bigr)
+        \times 2^{16}
+      \Bigr\rfloor \bmod 256,
+    \qquad i = (r-1)N + c.
+    \label{eq:lscm_quant}
+\end{equation}
+The chaos matrices $H$ and $L$ depend only on the corresponding initial
+conditions and structural constants; neither of them relates to the
+plaintext image.
 \section{Literature Review}
 \label{sec:lad-litreview}
-The concept of secret image sharing was first motivated by the development of classical secret sharing schemes by Shamir \cite{shamir1979share}, which laid a theoretical foundation for secret sharing among multiple parties. Naor and Shamir \cite{naor1995visual} later extended this idea to visual cryptography for images. The main idea is to encode a secret image into a number of shares such that any qualified set of shares will reveal the secret image visually. However, any unqualified subset will reveal nothing. The problem of visual cryptography is that there is a loss in contrast and resolution. 
 
-To address this problem, XOR-based secret image sharing schemes have been proposed. The XOR-based secret image sharing schemes operate on image pixels instead of bits. The XOR-based secret image sharing schemes use Shannon's perfect secrecy concept \cite{shannon1949communication} to guarantee perfect reconstruction of the secret image from all the shares. The XOR-based secret image sharing schemes also guarantee that any subset of shares is statistically independent of the secret image. This ensures that there is zero mutual information between any unqualified subset of shares and the secret image.
 
-However, the security proofs for the XOR-based constructions assume the presence of adversaries without access to structural priors about natural images. Recent deep learning advances contradict this. Convolutional Neural Networks (CNNs) \cite{lecun1998gradient} have shown impressive performance in learning hierarchical spatial representations from image data. Architectural innovations such as batch normalization \cite{ioffe2015batch} improve the stability of the learning process, while encoder-decoder architectures, such as the U-Net \cite{ronneberger2015unet}, enable accurate reconstruction for inverse image problems. Autoencoders, when learned using pixel-wise reconstruction objectives, can extract compact feature representations that can reconstruct structured image information from corrupted images. Moreover, the use of Perceptual Loss functions \cite{johnson2016perceptual} can improve the reconstruction quality for images. The reconstruction quality for such images can be measured using full-reference image similarity measures. The Peak Signal-to-Noise Ratio (PSNR) can measure the pixel-wise fidelity of the reconstruction, while the Structural Similarity Index Measure (SSIM) \cite{wang2004image} can measure the structural similarity between images by comparing the luminance, contrast, and structural information.
+The increased use of IoT devices has led to a revolution
+in modern communication infrastructure, facilitating instant transfer
+of data between intelligent home devices, industrial machinery,
+telemedicine applications, and even surveillance technology
+applications~\cite{atzori2010iot}.
+This revolution is significant, as recent studies reveal that
+billions of such devices have been put into use, transmitting confidential information through network channels~\cite{shafique2020iot5g}.
 
-In spite of the solid theoretical foundation of secret sharing via XOR and the remarkable advancements in the field of image reconstruction via deep learning methods, only a few works have attempted to explore the possibility of reconstructing the secret image via learning the priors of images and utilizing only certain subsets of the shares generated via XOR operations. Most of the existing works have been dedicated to enhancing the efficiency and robustness of secret image sharing methods and verifying their feasibility rather than testing their robustness against learning-based attacks. This work attempts to bridge this gap and test the robustness of secret image sharing via XOR operations against learning-based attacks and determine whether the secret image can be reconstructed via learning the priors of images and utilizing only certain subsets of the shares generated via XOR operations.
+A considerable amount of information that will be produced and
+transmitted through these devices consists of digital images; they may include
+medical scans, biometric information, satellite images, and video streams.
+All of these types of digital information are highly sensitive and require
+high levels of confidentiality~\cite{nauman2020miot}. Particularly when used in the healthcare industry, there
+are strict regulatory requirements for the security of these images.
+
+Since IoT devices have very limited resources in terms of processing
+power, storage, and battery life, cryptographic techniques like AES become highly computationally expensive when applied directly to high
+resolution images~\cite{heron2009aes}. Similarly, Triple DES becomes impractical under the constraints of IoT bandwidth and latency issues~\cite{barker2004tdea}. The same applies for public key algorithms like RSA.
+
+This challenge has resulted in an increasing number of studies on \\lightweight image-based cryptographic algorithms that can run effectively within IoT limitations but offer reasonable security~\cite{roy2020ieca}.
+Chaotic systems in parallel have been suggested as affordable building blocks for lightweight algorithms for securing green IoT applications~\cite{gu2022iepsbp}, and grain-based stream ciphers with chaotic systems have been proposed as solutions to secure low-power image processing in IoT networks~\cite{kumari2023grain}.
+Another approach to securing images transmitted in IoT networks is watermarking and lightweight cryptography, which has been studied as a two-layer security mechanism~\cite{gupta2023twolevel}.
+
+Image encryption using chaos has been found to be the most effective approach 
+to solve this problem \cite{fridrich1998symmetric}.
+Chaotic dynamical systems are considered suitable candidates for use in cryptography 
+owing to their inherent characteristics such as sensitivity to initial conditions, 
+ergodicity, mixing, and pseudorandomness, which directly correlate with confusion 
+and diffusion in a cipher system \cite{lan2018integrated}.
+The logistic map is one of the simplest chaos maps that has been extensively used for 
+image encryption owing to its uniform distribution property and lower complexity 
+\cite{noshadian2018optimizing}.
+Two-dimensional logistic map variants have been observed to possess better entropy 
+and mixing capabilities than one-dimensional maps \cite{hua2019cosine}.
+
+Hyperchaotic maps, which possess multiple positive Lyapunov
+exponents, have been proposed to further increase the complexity
+of the generated keystream~\cite{alexan2023hyperchaotic}.
+The H\'enon map, a canonical two-dimensional chaotic system, has
+been applied to image encryption through fractional Fourier
+transform frameworks to achieve strong pixel-level
+diffusion~\cite{mursi2014henon}.
+
+Parametric polynomial chaotic systems were presented to deal with
+the issue of performance deterioration and discontinuous parameters
+for many existing chaotic maps~\cite{hua2022parametric}. The techniques to create
+$n$-dimensional hyperchaotic systems with positive Lyapunov
+exponents have been investigated through the use of the Gershgorin
+criterion~\cite{zhang2023ndimensional}. Chaotic Latin square-based substitution-boxes
+were designed to attain maximum algebraic nonlinearity in image
+encryption schemes~\cite{hua2021sbox}.
+
+Although chaotic systems have proven useful for encryption,
+it has been shown that statistical robustness does not
+necessarily guarantee security against cryptanalysis, especially
+with regard to chosen plaintexts~\cite{xie2017cryptanalysis}.
+In her pioneering research into symmetric ciphers derived from
+chaotic mappings in two dimensions, Fridrich made great strides
+and yet fell prey to attacks by chosen plaintexts and known
+plaintexts capable of retrieving secret chaotic variables without
+exhaustive key search~\cite{fridrich1998symmetric}.
+
+Analysis of the QCMDC-IEA cipher that integrates quantum chaotic mapping and DNA encoding revealed that pseudo-random number generators independent of the plaintext generate keys that lead to the same results. Complete decryption using low complexity is possible using this vulnerability. A dual compression/encryption method using chaos permutation and row/column transformation is thus proposed~\cite{wen2023compression}.
+
+Cryptanalyzing the ICIC-DNA color image cryptosystem revealed that
+various DNA manipulations could be reduced to two-bit substitutions,
+and that substitution and permutation stages could be independently
+attacked using divide-and-conquer approaches~\cite{wen2023icicdna}.
+IES-M-BD, a cryptosystem based on memristive chaotic maps and a
+bidirectional cyclic bit shifting and diffusion mechanism at the DNA
+level, is an example of the move towards multiple component schemes,
+which are more resilient against attacks of this nature~\cite{qian2022iesmbd}.
+Another high-security color image encryption scheme, the CIES-DVEM scheme, relies
+on dynamic vector-level manipulations and a two-dimensional logistic modularity map~\cite{li2023ciesdvem}.
+In the domain of multimedia IoT security, compressed sensing techniques
+for encryption, together with linear feedback shift register scramblers,
+have been investigated~\cite{choi2022cs}.
+
+Selectively encrypting light-weight pixels in multimedia IoT 
+applications is found to lead to power savings and reduction 
+in packet rate with end-to-end privacy~\cite{hedayati2022lightweight}.
+CES-Blocks is an example of a blockchain-based medical image 
+transmission technique which utilizes a chaotic encryption 
+algorithm in IoT that can withstand differential attacks~\cite{durga2022cesblocks}.
+
+Real-time RGB image encryption for IoT applications based on enhanced sequences
+from logistic 1D map models and MQQT-driven machine to machine communication
+has been found to exhibit throughputs comparable to embedded processors~\cite{trujillo2021realtime}.
+The ETS-ZSC scheme, which is comprised of the Enhanced Thorp shuffle and Zig-zag scan
+convolution techniques, enables one-time key security with NPCR and UACI close to optimal.
+
+A scheme for the chaos-based encryption of images through
+confusion, diffusion, and chaotic-map encryption keys is
+supported by tests with NPCR and UACI metrics for smart cities~\cite{singh2022smartcity}.
+An important example of the multi-map approach to chaotic map
+encryption was the guan2005chaos method that combined the
+Arnold's cat map with the Chen's chaotic map but was
+later proven to be vulnerable to chosen-plaintext attacks~\cite{guan2005chaos}.
+The LSC-IES algorithm integrates two chaotic maps and the
+cosine transformation to mitigate any non-chaotic behavior~\cite{hua2019cosine}.
+
+The major flaw in most image encryption algorithms utilizing the
+chaotic nature is inadequate diffusion along with deterministic,
+key-independent transforms~\cite{xie2017cryptanalysis}. This means that
+there will still be some correlation between the plaintext and the
+ciphertext which will facilitate attack even without the knowledge of
+the key. Non-flat surface level pyramid interconnection models have
+been suggested for IoT devices as they can provide hierarchical data
+abstraction for multidimensional images~\cite{shahhoseini2014nfsl}.
+
+The use of fat-tree topologies with switch buffer blocking
+techniques results in less head-of-line blocking problems
+and shallower buffers, resulting in reduced energy
+consumption in IoT switching fabric design~\cite{mohtavipour2020fattree}.
+In this light, the current study analyzes the Multiple Map Chaos based Image
+Encryption~(MMCBIE) algorithm designed by Jain~et~al.~\cite{jain2024mmcbie}.
+
+MMCBIE has the following three consecutive steps:
+(i) Pixel-level XOR with a matrix obtained by applying Henon-map;
+(ii) Cyclic key mixing operation performed among colors; and 
+(iii) Pixel-level XOR with 2D logistic map.
+Although very good statistical measures like NPCR, UACI,
+Shannon Entropy, and SSIM have been claimed, it lacks adequate
+diffusion capabilities.
+
+These assertions are proven false in this paper under a chosen
+plaintext attack scenario.
+The core weakness lies in the basic design flaw whereby encryption is
+deterministic and separate, lacking an efficient coupling of pixels.
+Encryption of constant images results in predictable output that leads to
+a straightforward chosen plaintext attack by matching the plaintext
+values with the target ciphertext through equality. This is done by using
+constant probe images for all the different values of the pixel.
+A comparison is then done between the ciphertext generated and the
+target ciphertext per channel, exploiting the cyclic nature of key mixing
+and channel dependency. Matching plaintexts and ciphertexts will result
+in obtaining the original plaintext without decrypting chaotic
+sequences or secret keys.
 
 
 \section{Work Done}
 \label{sec:lad-work}
-% ─────────────────────────────────────────────────────────────────────────────
 
 
-A $(4,4)$ conventional random XOR secret sharing algorithm was applied to all cases.
-Three shares are created randomly based on independent Bernoulli sampling,
-while the fourth share is obtained by XOR operation between the binarized
-secret image and the previous three shares.
+% -----------------------------------------------------------------------
+\subsection{Key Structure}
+\label{subsec:key_structure}
 
-In mathematical terms, let $S$ be the secret image converted into binary, and
-$R_1$, $R_2$, and $R_3$ be independent random shares. The fourth share $R_4$ is
-generated by the following equation:
+The master secret key $K$ of MMCBIE is a 512-bit quantity partitioned
+into six subkeys as follows:
+\begin{equation}
+    K = \bigl(x_H,\; y_H,\; MK,\; x_L,\; y_L,\; R\bigr),
+    \label{eq:key_structure}
+\end{equation}
+where $x_H, y_H \in \mathbb{R}$ (each represented as a 64-bit
+floating-point value) are the initial conditions supplied to the
+H\'enon map; $MK$ is a 192-bit key-mixing sub-key partitioned into
+three byte arrays
+$MK_R, MK_G, MK_B \in \{0,\ldots,255\}^8$, one per RGB colour channel;
+and $x_L, y_L \in (0,1)$ and $R \in [1.11, 1.19]$ (each 64-bit)
+These constitute the input parameters for the 2D-LSCM.
+The one requirement for all subkeys is that R lies within the
+optimal chaotic domain of the 2D-LSCM.
+% -----------------------------------------------------------------------
+\subsection{Encryption Process}
+\label{subsec:encryption}
 
-\[
-    R_4 = S \oplus R_1 \oplus R_2 \oplus R_3.
-\]
-This guarantees that:
-\[
-    S = R_1 \oplus R_2 \oplus R_3 \oplus R_4.
-\]
+Let $P \in \{0,\ldots,255\}^{M \times N \times 3}$ be a plain colour
+image of height $M$ and width $N$.
+MMCBIE applies three successive transformation stages to produce the
+cipher image $C$.
 
-According to traditional cryptographic theory~\cite{shannon1949communication},
-a combination of shares that is less than four shares will lack the sufficient
-information required to reconstruct the secret image. All shares are dynamically
-generated during training to avoid memorization.
-
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-    node distance=0.45cm,
-    startstop/.style={rectangle, rounded corners, minimum width=3cm,
-        minimum height=0.45cm, text centered, draw=black, fill=white,
-        font=\scriptsize},
-    process/.style={rectangle, minimum width=3cm, minimum height=0.45cm,
-        text centered, draw=black, fill=white, font=\scriptsize},
-    arrow/.style={->, >=Stealth}
+block/.style={draw, rectangle, minimum width=3.5cm, minimum height=0.9cm, align=center, font=\scriptsize},
+arrow/.style={->, thick},
+node distance=1.5cm
 ]
-\node (in1)  [startstop]                  {Secret Image $S$ (MNIST)};
-\node (pro1) [process, below=of in1]      {Binarization \& Resize ($128{\times}128$)};
-\node (pro2) [process, below=of pro1]     {XOR Share Generation ($R_1, R_2, R_3, R_4$)};
-\node (pro3) [process, below=of pro2]     {Share Concatenation (Channel Dimension)};
-\node (mod1) [process, below=of pro3]     {Residual CNN Decoder ($f_\theta$ or $g_\phi$)};
-\node (pro4) [process, below=of mod1]     {Sigmoid Output Layer};
-\node (out1) [startstop, below=of pro4]   {Reconstructed Image $\hat{S}$};
-\node (eval) [startstop, below=of out1]   {Evaluation: SSIM \& PSNR};
-\draw [arrow] (in1)  -- (pro1);
-\draw [arrow] (pro1) -- (pro2);
-\draw [arrow] (pro2) -- (pro3);
-\draw [arrow] (pro3) -- (mod1);
-\draw [arrow] (mod1) -- (pro4);
-\draw [arrow] (pro4) -- (out1);
-\draw [arrow] (out1) -- (eval);
+
+\node[block] (input) {Plain Image $P$};
+
+\node[block, below of=input] (henon_gen) {Generate H\'enon Chaos Matrix $H$\\using $(x_H, y_H)$};
+
+\node[block, below of=henon_gen] (stage1) {Stage 1:\\$A = P \oplus H$};
+
+\node[block, below of=stage1] (keymix) {Stage 2: Key Mixing\\Channel Rotation + Modular Addition\\using $MK$};
+
+\node[block, below of=keymix] (stage2_out) {Intermediate Output $B$};
+
+\node[block, below of=stage2_out] (logistic_gen) {Generate 2D-LSCM Matrix $L$\\using $(x_L, y_L, R)$};
+
+\node[block, below of=logistic_gen] (stage3) {Stage 3:\\$C = B \oplus L$};
+
+\node[block, below of=stage3] (output) {Cipher Image $C$};
+
+\draw[arrow] (input) -- (henon_gen);
+\draw[arrow] (henon_gen) -- (stage1);
+\draw[arrow] (stage1) -- (keymix);
+\draw[arrow] (keymix) -- (stage2_out);
+\draw[arrow] (stage2_out) -- (logistic_gen);
+\draw[arrow] (logistic_gen) -- (stage3);
+\draw[arrow] (stage3) -- (output);
+
 \end{tikzpicture}
-\caption{Autoencoder Based Attack Pipeline on XOR Secret Sharing Scheme.}
-\label{fig:xor_attack_pipeline}
+\caption{Encryption flow of MMCBIE scheme.}
+\label{fig:mmcbie_flow}
 \end{figure}
 
-\subsection{Dataset Preparation}
 
-MNIST~\cite{lecun1998gradient} dataset is used for training and testing purposes.
-The images were first normalized between $[0,1]$ and then resized to $128 \times 128$
-pixels, and are fed into the system as grayscale images. The shares are generated on-the-go
-during training to avoid memorizing of specific share-image pairs.
+\subsubsection{Stage 1: H\'enon Chaotic Transform}
+\label{subsubsec:henon_transform}
 
-\subsection{Learning-Based Reconstruction Framework}
+The H\'enon chaos matrix $H$ is generated from the subkeys
+$(x_H, y_H)$ as described in Section~\ref{subsec:chaotic_maps}.
+The first-stage output $A \in \{0,\ldots,255\}^{M \times N \times 3}$
+is obtained by applying a pixel-wise XOR between $P$ and $H$
+across all three colour channels:
+\begin{equation}
+    A_{r,c,k} = P_{r,c,k} \oplus H_{r,c},
+    \qquad k \in \{R,G,B\},
+    \label{eq:henon_enc}
+\end{equation}
+where the same chaos value $H_{r,c}$ is XORed independently into
+each channel.
+Because $H$ is entirely determined by $(x_H, y_H)$, the mapping
+$P \mapsto A$ is a fixed bijection for any given key.
 
-Two distinct decoder configurations were investigated.
+\subsubsection{Stage 2: Key Mixing}
+\label{subsubsec:key_mixing}
 
-\subsubsection{Configuration 1: Decoder Trained on All Four Shares}
+The key-mixing phase employs a cyclic modular addition chain on
+the color components of $A$ using the 192-bit subkey $MK$. 
+The pixel components of each color component are serialized in row-major order.
+Denoting the flattened pixel index by $j \in \{0, 1, \ldots, MN-1\}$,
+the output pixel $B_j$ is formed by cross-channel modular addition:
+\begin{equation}
+B_{j}^{R} =
+\begin{cases}
+\bigl(A_{j}^{G} + MK_G[j \bmod 8]\bigr) \bmod 256,
+        & \text{if } j < 8, \\[4pt]
+\bigl(A_{j}^{G} + MK_G[(j-8) \bmod 8]\bigr) \bmod 256,
+        & \text{if } j \geq 8,
+\end{cases}
+\label{eq:keymix_R}
+\end{equation}
+\begin{equation}
+B_{j}^{G} =
+\begin{cases}
+\bigl(A_{j}^{B} + MK_B[j \bmod 8]\bigr) \bmod 256,
+        & \text{if } j < 8, \\[4pt]
+\bigl(A_{j}^{B} + MK_B[(j-8) \bmod 8]\bigr) \bmod 256,
+        & \text{if } j \geq 8,
+\end{cases}
+\label{eq:keymix_G}
+\end{equation}
+\begin{equation}
+B_{j}^{B} =
+\begin{cases}
+\bigl(A_{j}^{R} + MK_R[j \bmod 8]\bigr) \bmod 256,
+        & \text{if } j < 8, \\[4pt]
+\bigl(A_{j}^{R} + MK_R[(j-8) \bmod 8]\bigr) \bmod 256,
+        & \text{if } j \geq 8.
+\end{cases}
+\label{eq:keymix_B}
+\end{equation}
+There are three key observations for the cryptanalysis that follows.
+First, the channel-rotation sequence (G→R, B→G, R→B)
+is static and publicly known.
+Second, the offset values have a period of 8 across the image,
+resulting in at most eight unique per-channel offsets being used.
+Finally, this stage is completely linear on the plaintext space
+(modulo 256) and is unaffected by the chaotic state; when $MK$ is known,
+this stage becomes easily reversible.
 
-The neural decoder network is trained on all four shares combined along the channel axis
-to produce a four-channel image tensor of dimensions $128 \times 128 \times 4$. This
-training involves learning the following transformation:
-\[
-    f_\theta : \mathbb{R}^{128 \times 128 \times 4} \rightarrow \mathbb{R}^{128 \times 128}.
-\]
-The loss function employed for training is binary cross-entropy, and the model is
-trained for 20 epochs using the Adam optimizer~\cite{kingma2015adam}. The trained
-model is tested for various scenarios involving different shares, where the missing
-shares are filled with zeros.
+\subsubsection{Stage 3: 2D-Logistic Chaotic Transform}
+\label{subsubsec:logistic_transform}
 
-\subsection{Configuration 2: Decoding with Three Consecutive XOR Shares (Independently Trained Model)}
+The 2D-LSCM chaos matrix $L$ is generated from the subkeys
+$(x_L, y_L, R)$ as described in Section~\ref{subsec:chaotic_maps}.
+The final cipher image $C$ is produced by pixel-wise XOR of $B$
+with $L$ across all three colour channels:
+\begin{equation}
+    C_{r,c,k} = B_{r,c,k} \oplus L_{r,c},
+    \qquad k \in \{R,G,B\}.
+    \label{eq:lscm_enc}
+\end{equation}
+Like for Stage~1, the identical scalar chaos number $L_{r,c}$ is used on
+all three color channels at each position of the pixel.
+The overall encryption process can then be described as
+\begin{equation}
+    C_{r,c,k}
+    = \bigl[(P_{r,c,\sigma(k)} \oplus H_{r,c})
+             + MK_k[(r \cdot N + c) \bmod 8]\bigr] \bmod 256
+      \;\oplus\; L_{r,c},
+    \label{eq:full_pipeline}
+\end{equation}
+where $\sigma$ denotes the channel-rotation permutation
+$\sigma(R)=G,\;\sigma(G)=B,\;\sigma(B)=R$ defined by the key-mixing
+stage.
 
-Another autoencoder was trained specifically for this configuration, using only three
-consecutive XOR shares as inputs. As opposed to Configuration~1, in which the decoder
-was trained with all four shares, here the fourth share is not even seen during training.
-Therefore, the learning task becomes different because now the model is required to learn
-to reconstruct from an incomplete input distribution.
+% -----------------------------------------------------------------------
+\subsection{Decryption Process}
+\label{subsec:decryption}
 
-Training of this decoder takes place using only three shares, where no wraparound is employed. Training is done independently from the four-shares decoder, meaning that no weights are shared.
-The possible pairs of shares for the training are: $\{1,2,3\}$ and $\{2,3,4\}$. Three shares are stacked to produce a 3-channel matrix of dimensions $128 \times 128 \times 3$, and the training takes place by learning the mapping:
-\[
-    g_\phi : \mathbb{R}^{128 \times 128 \times 3} \rightarrow \mathbb{R}^{128 \times 128}.
-\]
-The same convolutional residual architecture, optimizer, and loss are used as
-in Configuration 1.
+Decryption is precisely the opposite of the encryption procedure,
+carried out in the opposite sequence of steps.
+Using the ciphertext $C$ and key $K = (x_H, y_H, MK, x_L, y_L, R)$,
+the recipient reconstructs $H$ and $L$ in the same manner as during encryption,
+which is legitimate since both chaotic matrices are uniquely determined by the key.
+
+\paragraph{Inverse Stage 3 (Logistic XOR).}
+Since XOR is self-inverse, the key-mix output $B$ is recovered by
+\begin{equation}
+    B_{r,c,k} = C_{r,c,k} \oplus L_{r,c},
+    \qquad k \in \{R,G,B\}.
+    \label{eq:lscm_dec}
+\end{equation}
+
+\paragraph{Inverse Stage 2 (Key-Mixing).}
+The operations of channel-rotation and modular addition are then reversed by a
+modular subtraction operation in conjunction with channel counter-rotation:
+\begin{equation}
+    A_{j}^{G} = \bigl(B_{j}^{R} - MK_G[j \bmod 8]\bigr) \bmod 256,
+    \label{eq:keymix_dec_G}
+\end{equation}
+\begin{equation}
+    A_{j}^{B} = \bigl(B_{j}^{G} - MK_B[j \bmod 8]\bigr) \bmod 256,
+    \label{eq:keymix_dec_B}
+\end{equation}
+\begin{equation}
+    A_{j}^{R} = \bigl(B_{j}^{B} - MK_R[j \bmod 8]\bigr) \bmod 256,
+    \label{eq:keymix_dec_R}
+\end{equation}
+with the index offset switching from $j \bmod 8$ to
+$(j-8) \bmod 8$ for $j \geq 8$, mirroring Eqs.~\eqref{eq:keymix_R}--\eqref{eq:keymix_B}.
+
+\paragraph{Inverse Stage 1 (H\'enon XOR).}
+The plaintext is finally recovered by
+\begin{equation}
+    P_{r,c,k} = A_{r,c,k} \oplus H_{r,c},
+    \qquad k \in \{R,G,B\},
+    \label{eq:henon_dec}
+\end{equation}
+using the same chaos matrix $H$ as used during the encryption process.
+Decryption is only possible when precise information regarding the six subkeys is known since any slight change to either $(x_H, y_H)$ or $(x_L, y_L, R)$ yields an entirely new chaos matrix.
 
 
-\subsection{Decoder Architecture}
+We conduct a full CPA attack on the Multiple Map Chaos Based Image Encryption
+(MMCBIE) algorithm proposed by Jain et al.~\cite{jain2024mmcbie}. Our attack is able to
+fully recover the plaintext from any target ciphertext regardless of the secret key.
+The whole process needs only $256$ oracle calls for chosen plaintexts and takes
+$\mathcal{O}(n^2)$ time.
 
-For both configurations, we use a convolutional neural network with
-residual connections~\cite{he2016deep}. The CNN includes an initial
-convolution layer for low-level feature extraction, followed by several
-blocks that utilize residual connections in order to conserve spatial
-information and facilitate learning. Additionally, the network uses
-batch normalization~\cite{ioffe2015batch}, dropout~\cite{srivastava2014dropout},
-and a sigmoid activation on the output node that produces the reconstructed
-image.
+\subsection{Notation and Encryption Model}
+\label{subsec:notation}
 
-% ===========================
+Let $P$ denote an $n \times n$ RGB plaintext image. We index pixels by their
+flattened row-major position $k \in \{0, \ldots, N-1\}$, where $N = n^2$, and
+write $P_c[k]$ for colour channel $c \in \{R, G, B\}$. All arithmetic is
+modulo 256 unless stated otherwise; we denote this ring by $\mathbb{Z}_{256}$.
+The exclusive-OR operation on $\mathbb{Z}_{256}$ is written $\oplus$.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+block/.style={draw, rectangle, minimum width=3cm, minimum height=0.8cm, align=center, font=\scriptsize},
+arrow/.style={->, thick},
+node distance=1.4cm
+]
+
+\node[block] (input) {256 Constant Probe\\Images $\mathbf{v}$, $v\in\{0,\ldots,255\}$};
+\node[block, below of=input] (oracle) {Encryption Oracle $\mathcal{E}(\cdot)$};
+\node[block, below of=oracle] (cipher) {Probe Ciphertexts $C^{(v)}$};
+\node[block, below of=cipher] (match) {Pixel-wise Channel\\Matching};
+\node[block, below of=match] (recovered) {Recovered Plaintext $\hat{P}$};
+
+\draw[arrow] (input) -- (oracle);
+\draw[arrow] (oracle) -- (cipher);
+\draw[arrow] (cipher) -- (match);
+\draw[arrow] (match) -- (recovered);
+
+\end{tikzpicture}
+\caption{CPA flow for MMCBIE.}
+\label{fig:cpa_mmcbie}
+\end{figure}
+
+MMCBIE applies three successive stages to the plaintext:
+
+\paragraph{Stage 1 — Hénon Chaotic Transform.}
+A two-dimensional Hénon sequence is generated from subkeys $(x_H, y_H)$:
+\begin{align}
+  x_{i+1} &= 1 - a\,x_i^2 + y_i, \qquad
+  y_{i+1} = b\,x_i,
+  \label{eq:henon}
+\end{align}
+with standard parameters $a = 1.4$, $b = 0.3$. The scalar chaos value at
+pixel position $k$ is
+\begin{equation}
+  H[k] = \bigl\lfloor\bigl(|x_k| + |y_k|\bigr)\cdot 2^{16}\bigr\rfloor
+          \bmod 256.
+  \label{eq:henon_val}
+\end{equation}
+The same value $H[k]$ is XORed into every colour channel:
+\begin{equation}
+  P_c^{(1)}[k] = P_c[k] \oplus H[k], \qquad c \in \{R, G, B\}.
+  \label{eq:stage1}
+\end{equation}
+
+\paragraph{Stage 2 — Key Mixing.}
+A 192-bit master key is split into three arrays of eight bytes each,
+$\mathrm{MK}_R, \mathrm{MK}_G, \mathrm{MK}_B \in \mathbb{Z}_{256}^{8}$.
+The colour channels are cyclically cross-added with period~8:
+\begin{align}
+  S_R[k] &= \bigl(P_G^{(1)}[k] + \mathrm{MK}_G[k \bmod 8]\bigr) \bmod 256,
+  \label{eq:km_r}\\
+  S_G[k] &= \bigl(P_B^{(1)}[k] + \mathrm{MK}_B[k \bmod 8]\bigr) \bmod 256,
+  \label{eq:km_g}\\
+  S_B[k] &= \bigl(P_R^{(1)}[k] + \mathrm{MK}_R[k \bmod 8]\bigr) \bmod 256.
+  \label{eq:km_b}
+\end{align}
+The output red channel is a function of the green plaintext channel, the output
+green channel is a function of the blue plaintext channel, and the output blue
+channel is a function of the red plaintext channel.
+
+\paragraph{Stage 3 — 2D-Logistic Chaotic Transform.}
+A two-dimensional logistic sequence is generated from subkeys $(x_L, y_L, r)$:
+\begin{align}
+  x_{i+1} &= r\,(3y_i + 1)\,x_i\,(1-x_i), \qquad
+  y_{i+1}  = r\,(3x_{i+1}+1)\,y_i\,(1-y_i),
+  \label{eq:logistic}
+\end{align}
+with a 500-iteration warm-up to eliminate transient behaviour. The scalar
+chaos value at pixel $k$ is
+\begin{equation}
+  L[k] = \bigl\lfloor\bigl(|x_k|+|y_k|\bigr)\cdot 2^{16}\bigr\rfloor
+          \bmod 256.
+  \label{eq:logistic_val}
+\end{equation}
+The same value $L[k]$ is XORed into every colour channel:
+\begin{equation}
+  C_c[k] = S_c[k] \oplus L[k], \qquad c \in \{R,G,B\}.
+  \label{eq:stage3}
+\end{equation}
+
+Combining \eqref{eq:stage1}--\eqref{eq:stage3}, the complete encryption of the
+red channel at pixel $k$ with slot index $\ell = k \bmod 8$ is:
+\begin{equation}
+  \boxed{C_R[k] = \Bigl[\bigl(P_G[k] \oplus H[k]\bigr)
+                  + \mathrm{MK}_G[\ell]\Bigr]
+                  \bmod 256 \;\;\oplus\;\; L[k].}
+  \label{eq:full_enc_r}
+\end{equation}
+Analogous expressions hold for $C_G[k]$ and $C_B[k]$.
+
+\subsection{Exploitable Structural Weaknesses}
+\label{subsec:weaknesses}
+
+Three independent design flaws make the scheme vulnerable to a CPA.
+
+\begin{enumerate}
+\item \textbf{Plaintext-independent chaos sequences.} The values of $H[k]$ and $L[k]$
+      are functions of the secret key alone and not of the plaintext.
+      Hence, they can be treated as equivalent-key streams.n~\cite{wen2023cryptanalysis}.
+
+\item \textbf{Channel-uniform chaos XOR.} The same scalar H[k] (and L[k]) transformation is performed on each of the three colour components (refer to \eqref{eq:stage1} and \eqref{eq:stage3}). This reduces three separate degrees of freedom to one, resulting in cross-channel correlation.
+
+\item \textbf{Deterministic encryption of constant images.} Since both $H[k]$ and
+      $L[k]$ chaos streams are completely independent of the plaintext, the
+      encryption of all spatially-uniform images, wherein the pixels of a
+      particular channel contain a constant value $v$, results in a
+      ciphertext whose content is determined solely by $v$ and the key
+      streams. This implies that for every candidate plaintext pixel value
+      $v \in \mathbb{Z}_{256}$, the response $\mathcal{E}(\mathbf{v})$
+      from the oracle can be used to construct a complete lookup table of
+      all possible encryptions for each pixel. Any hacker who constructs
+      such a table will be able to retrieve, bit by bit, the plaintext
+      pixel value responsible for a ciphertext value without reversing
+      $H[k], L[k]$, or $\mathrm{MK}$.
+\end{enumerate}
+
+\subsection{Attack Construction}
+\label{subsec:attack}
+
+\paragraph{Core Observation.}
+Fix a pixel position $k$ and consider the red output channel. From
+\eqref{eq:full_enc_r}, for a constant probe image with $P_G[k] = v$ for all $k$:
+\begin{equation}
+  C_R^{(v)}[k]
+    = \Bigl[\bigl(v \oplus H[k]\bigr) + \mathrm{MK}_G[k \bmod 8]\Bigr]
+      \bmod 256 \;\oplus\; L[k].
+  \label{eq:probe_r}
+\end{equation}
+As $H[k]$, $\mathrm{MK}_G$, and $L[k]$ are fixed constants that depend only on
+the key, $C_R^{(v)}[k]$ becomes a deterministic function of $v$ only. Likewise,
+the green and blue channels in $\mathcal{E}(\mathbf{v})$ become deterministic
+functions of $v$ only if $P_B[k] = v$ and $P_R[k] = v$, respectively.
+
+Now let $C^*$ be any target ciphertext to be decrypted, with $C^*_R[k]$,
+$C^*_G[k]$, $C^*_B[k]$ the per-channel values at pixel $k$. The channel
+cross-coupling in Stage~2 (equations \eqref{eq:km_r}--\eqref{eq:km_b}) implies:
+\begin{align}
+  C^*_R[k] &\text{ encodes information about } P_G[k], \label{eq:cross_r}\\
+  C^*_G[k] &\text{ encodes information about } P_B[k], \label{eq:cross_g}\\
+  C^*_B[k] &\text{ encodes information about } P_R[k]. \label{eq:cross_b}
+\end{align}
+This means that, to retrieve the green channel value of the plaintext from
+pixel $k$, the attacker must find the value v where the red component value of the
+probe ciphertext  $C^{(v)}$  is equal to the red component of the target ciphertext
+at position $k$:
+\begin{equation}
+  \hat{P}_G[k] = v \quad \text{such that} \quad C^{(v)}_R[k] = C^*_R[k].
+  \label{eq:recover_g}
+\end{equation}
+Analogously:
+\begin{align}
+  \hat{P}_B[k] &= v \quad \text{such that} \quad C^{(v)}_G[k] = C^*_G[k],
+  \label{eq:recover_b}\\
+  \hat{P}_R[k] &= v \quad \text{such that} \quad C^{(v)}_B[k] = C^*_B[k].
+  \label{eq:recover_r}
+\end{align}
+
+\paragraph{Correctness.}
+\begin{proposition}
+For every pixel $k$ and every channel $c \in \{R,G,B\}$, the recovered value
+satisfies $\hat{P}_c[k] = P_c[k]$.
+\end{proposition}
+
+\begin{proof}
+Consider the green channel recovery at pixel $k$. Let $v^* = P_G[k]$ be the
+true plaintext value. Substituting into \eqref{eq:probe_r}:
+\begin{equation}
+  C^{(v^*)}_R[k]
+    = \Bigl[\bigl(P_G[k] \oplus H[k]\bigr) + \mathrm{MK}_G[k \bmod 8]\Bigr]
+      \bmod 256 \;\oplus\; L[k]
+    = C^*_R[k].
+\end{equation}
+Hence $v^*$ satisfies the matching condition \eqref{eq:recover_g}, so
+$\hat{P}_G[k] = P_G[k]$. Identical arguments hold for $\hat{P}_B[k]$ via
+\eqref{eq:recover_b} and $\hat{P}_R[k]$ via \eqref{eq:recover_r}.
+\end{proof}
+
+\paragraph{Uniqueness.}
+The encryption function at each pixel and channel is a composition of XOR with
+$H[k]$, modular addition of a key byte, and XOR with $L[k]$. This composition
+is a bijection on $\mathbb{Z}_{256}$ (each operation is individually
+invertible), so for each pixel $k$ the map $v \mapsto C^{(v)}_R[k]$ is a
+permutation of $\mathbb{Z}_{256}$. Therefore exactly one value
+$v \in \{0,\ldots,255\}$ satisfies $C^{(v)}_R[k] = C^*_R[k]$, guaranteeing
+that the recovered plaintext value is unique.
+
+\subsection{Complexity Analysis}
+\label{subsec:complexity_mmcbie}
+
+\paragraph{Data complexity.}
+The attack sends precisely $256$ plaintext queries to the encryption oracle,
+one for each value $v \in \{0,\ldots,255\}$ used in probing. The number of
+queries is independent of image dimensions.
+
+\paragraph{Computational complexity.}
+Phase~1 requires $256$ oracle queries, each encrypting an $n \times n$ image
+at cost $\mathcal{O}(N)$, giving total query cost $\mathcal{O}(256 \cdot N) =
+\mathcal{O}(N)$. Phase~2 iterates over $N$ pixels and for each pixel performs
+at most $256$ comparisons across three channels, for a total work of
+\begin{equation}
+  W_{\text{Phase 2}} = N \times 256 \times 3 = 768\,N = \mathcal{O}(N).
+  \label{eq:work_phase2}
+\end{equation}
+The dominant cost is thus $\mathcal{O}(N) = \mathcal{O}(n^2)$, making the
+attack comparable in cost to a single encryption, yet achieving complete
+plaintext recovery without any knowledge of the secret key.
+
+\paragraph{Memory complexity.}
+The attacker stores $256$ probe ciphertexts of size $N \times 3$ bytes each,
+for a total of $\mathcal{O}(256 \cdot N) = \mathcal{O}(N)$ memory.
+
+
+\begin{algorithm}[H]
+\LinesNumbered
+\caption{CPA Against MMCBIE}
+\label{alg:cpa_mmcbie}
+\SetAlgoLined
+\KwIn{Encryption oracle $\mathcal{E}(\cdot)$; target ciphertext $C^*$; image
+      dimensions $n \times n$.}
+\KwOut{Recovered plaintext $\hat{P}$.}
+\BlankLine
+
+\tcp{Phase 1 --- Build Probe Lookup Table}
+\For{$v = 0$ \KwTo $255$}{
+    Construct probe image $\mathbf{v}$: set all pixels of all channels to $v$\;
+    Query $C^{(v)} \leftarrow \mathcal{E}(\mathbf{v})$\;
+}
+\BlankLine
+
+\tcp{Phase 2 --- Pixel-wise Plaintext Recovery via Channel Matching}
+Initialise recovered image $\hat{P}$ of size $n \times n \times 3$\;
+\For{each pixel position $k \in \{0, \ldots, N-1\}$}{
+    \For{$v = 0$ \KwTo $255$}{
+        \If{$C^{(v)}_R[k] = C^*_R[k]$}{
+            $\hat{P}_G[k] \leftarrow v$\;
+        }
+        \If{$C^{(v)}_G[k] = C^*_G[k]$}{
+            $\hat{P}_B[k] \leftarrow v$\;
+        }
+        \If{$C^{(v)}_B[k] = C^*_B[k]$}{
+            $\hat{P}_R[k] \leftarrow v$\;
+        }
+    }
+}
+\BlankLine
+\Return $\hat{P}$\;
+\end{algorithm}
 
 
 
+
+
+\begin{table}[h]
+\centering
+\caption{Attack complexity versus MMCBIE encryption cost.}
+\label{tab:complexity_mmcbie}
+\begin{tabular}{lccc}
+\toprule
+                       & Encryption         & CPA Attack          \\
+\midrule
+Oracle queries         & ---                & $256$               \\
+Arithmetic operations  & $\mathcal{O}(N)$   & $\mathcal{O}(N)$    \\
+Brute-force search     & ---                & $768\,N$ comparisons\\
+Memory                 & $\mathcal{O}(N)$   & $\mathcal{O}(256 \cdot N)$ \\
+Key knowledge required & N/A                & None                \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Results and Analysis}
-\label{sec:lad-results}
+In this part, we provide a full-fledged experimental analysis of the suggested CPA technique in comparison to the MMBCIE protocol developed by Jain et al.~\cite{jain2024mmcbie}. Experiments were carried out using Python~3 and involved the use of a color image. The CPA conditions were rigorously followed during the experiment such that the attacker had access to the encryption oracle $\mathcal{E}(\cdot)$ but not the secret key or cipher states.
 
-In this part, a thorough analysis is presented for the proposed learning-based reconstruction attack in scenarios with different levels of access to the XOR shares. Two cases are considered: (i) training of the decoder using all four XOR shares and testing in full and partial input scenarios (Figs.~\ref{fig:all_results}(a)-(d)), and (ii) training of the decoder using only three consecutive XOR shares (Figs.~\ref{fig:all_results}(e)-(f)).
+\subsection{Experimental Setup}
+\label{subsec:setup}
 
-Reconstruction quality is measured both by numerical means using SSIM and PSNR
-values, and also visually using Fig.~\ref{fig:all_results}.
-Each image number is associated with each particular MNIST digit class, such
-as Image~1 for the digit class ``1''. Tables provide data for the digit
-classes 1--5 for conciseness, although all results were actually computed for
-all ten MNIST digit classes (0--9). The sample reconstructions of
-Fig.~\ref{fig:all_results} refer to the digit class ``7''.
+The oracle was configured with the following fixed key, withheld from the attacker:
+\begin{equation}
+    x_H = 0.1,\quad y_H = 0.2,\quad R = 1.15,\quad x_L = 0.3,\quad y_L = 0.4,
+    \label{eq:exp_key}
+\end{equation}
+together with the 192-bit key-mixing subkey $MK = \{MK_R, MK_G, MK_B\}$:
+\begin{align*}
+  MK_R &= [12, 34, 56, 78, 90, 11, 22, 33],\\
+  MK_G &= [44, 55, 66, 77, 88, 99, 10, 21],\\
+  MK_B &= [31, 42, 53, 64, 75, 86, 97, 18].
+\end{align*}
+The values served only to create an oracle; at no time during the attack did the attack require information on any of the aforementioned parameters.  The cipher image $C = \mathcal{E}(P)$ reated using the above parameters does not appear visually similar to the plaintext, as expected for the scheme’s confusion/diffusion features.
 
-% ===========================
-\begin{figure*}[htbp]
+\subsection{Phase 1: Construction of the Probe Lookup Table}
+\label{subsec:exp_phase1}
+
+For each candidate plaintext value $v \in \{0, 1, \ldots, 255\}$, a spatially uniform probe image $\mathbf{v}$ was constructed in which every pixel of every channel was set to $v$. Each probe was submitted to the oracle, yielding the ciphertext response $C^{(v)} = \mathcal{E}(\mathbf{v})$. As the Hénon and logistic chaos streams do not depend on the plaintext input at all, the ciphertext output $C^{(v)}$ for each pixel location $k$ is uniquely determined by $v$ and the key streams alone. Collectively, the 256 images yield a lookup table for each pixel location $k$ and each channel, mapping the 256 different plaintext values to their corresponding ciphertexts. This step precisely utilized 256 oracle queries without needing any information about the secret key.
+
+
+\begin{table}[H]
 \centering
-
-\subfloat[All 4 Shares]{%
-  \label{fig:vis_all4}%
-  \includegraphics[width=0.8\textwidth]{images/xor4_vis.png}%
-}
-
-\vspace{0.5em}
-
-\subfloat[1 Share Missing]{%
-  \label{fig:vis_miss1}%
-  \includegraphics[width=0.8\textwidth]{images/xor_missing1.png}%
-}
-
-\vspace{0.5em}
-
-\subfloat[2 Shares Missing]{%
-  \label{fig:vis_miss2}%
-  \includegraphics[width=0.8\textwidth]{images/xor_missing2.png}%
-}
-
-\vspace{0.5em}
-
-\subfloat[3 Shares Missing]{%
-  \label{fig:vis_miss3}%
-  \includegraphics[width=0.8\textwidth]{images/xor_missing3.png}%
-}
-
-\vspace{0.5em}
-
-\subfloat[Shares \{1,2,3\}]{%
-  \label{fig:vis_123}%
-  \includegraphics[width=0.8\textwidth]{images/xor_1_2_3.png}%
-}
-
-\vspace{0.5em}
-
-\subfloat[Shares \{2,3,4\}]{%
-  \label{fig:vis_234}%
-  \includegraphics[width=0.8\textwidth]{images/xor_2_3_4.png}%
-}
-
-\caption{Visualized outcomes of the MNIST digit `7' for different settings of the XOR
-sharing. The subplots~(a)-(d) are generated from the decoder model trained
-on all four shares (Setting~1). The subplots~(e)-(f) are generated from the
-decoder model trained on only three consecutive shares (Setting~2).}
-\label{fig:all_results}
-\end{figure*}
-
-% ===========================
-\subsection{Configuration 1: Decoding with All Four XOR Shares}
-
-\subsubsection{Case (a): Evaluation with All Four Shares}
-
-Table~\ref{tab:xor4} presents reconstruction quality when all four XOR shares
-are available during testing. The visual result for the digit ``7'' is shown in
-Fig.~\ref{fig:all_results}(a).
-
-\begin{table}[htbp]
-\centering
-\caption{Reconstruction Quality Using All Four XOR Shares.}
-\label{tab:xor4}
-\begin{tabular}{|c|c|c|}
-\hline
-\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
-\hline
-Image 1   & 0.9790 & 34.22 \\
-Image 2   & 0.9652 & 31.92 \\
-Image 3   & 0.9882 & 37.47 \\
-Image 4   & 0.9651 & 33.45 \\
-Image 5   & 0.9626 & 32.28 \\
-\hline
-\textbf{Average} & $\mathbf{\approx 0.9720}$ & $\mathbf{\approx 33.87}$ \\
-\hline
+\caption{Probe lookup table construction metrics.}
+\label{tab:phase1_results}
+\begin{tabular}{lc}
+\toprule
+Metric & Value \\
+\midrule
+Oracle queries used                                      & 256 \\
+Probe values covered ($v \in \mathbb{Z}_{256}$)         & 256 \\
+Lookup table fully populated                             & \textbf{True} \\
+Key knowledge required                                   & None \\
+\bottomrule
 \end{tabular}
 \end{table}
 
-The reconstructions are highly similar to the input, with global structure and fine details being preserved. The high values for SSIM and PSNR suggest that the neural network successfully reconstructs an input without loss, which is very similar to classical XOR decoding. This finding supports previous research, which shows that residual CNNs can decode structured linear transformations if enough input is present~\cite{he2016deep}.
+\subsection{Phase 2: Pixel-wise Plaintext Recovery via Channel Matching}
+\label{subsec:exp_phase2}
 
-% ---
-\subsubsection{Case (b): One Share Missing}
+For the provided ciphertext $C^*$ and the lookup table created during Phase~1, the attack recovered pixels in a pairwise manner using the cross-coupling property of the second stage channels. As mentioned earlier from the set of equations \eqref{eq:km_r}-\eqref{eq:km_b}, the red output channel contains information about the green plaintext channel, green output channel contains information about blue plaintext channel, and blue output channel contains information about red plaintext channel. For every $k$ pixel, the attacker compared all 256 probes with the below matching conditions:
 
-Table~\ref{tab:xor_miss1} reports reconstruction quality when one of the four
-XOR shares is withheld and replaced by a zero-valued channel. The corresponding
-visual output for the digit ``7'' is shown in Fig.~\ref{fig:all_results}(b).
+\begin{align}
+  \hat{P}_G[k] &= v \quad \text{such that} \quad C^{(v)}_R[k] = C^*_R[k], \label{eq:match_g}\\
+  \hat{P}_B[k] &= v \quad \text{such that} \quad C^{(v)}_G[k] = C^*_G[k], \label{eq:match_b}\\
+  \hat{P}_R[k] &= v \quad \text{such that} \quad C^{(v)}_B[k] = C^*_B[k]. \label{eq:match_r}
+\end{align}
 
-\begin{table}[htbp]
+Because the function for the encryption of each pixel is a bijection from $\mathbb{Z}_{256}$ to itself, exactly one $v$ will fit each match criteria, ensuring uniqueness and correctness at every pixel and channel level. This step involved no more oracle calls, operating in time $\mathcal{O}(256 \cdot N)$.
+
+
+\begin{table}[H]
 \centering
-\caption{Reconstruction Quality with One XOR Share Missing.}
-\label{tab:xor_miss1}
-\begin{tabular}{|c|c|c|}
-\hline
-\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
-\hline
-Image 1   & 0.0020  &  6.28 \\
-Image 2   & 0.0057  &  6.40 \\
-Image 3   & 0.0028  &  6.05 \\
-Image 4   & 0.0129  &  6.41 \\
-Image 5   & 0.0022 & 6.28 \\
-\hline
-\textbf{Average} & $\mathbf{\approx 0.0042}$ & $\mathbf{\approx 6.28}$ \\
-\hline
+\caption{Pixel-wise plaintext recovery metrics.}
+\label{tab:phase2_results}
+\begin{tabular}{lc}
+\toprule
+Metric & Value \\
+\midrule
+Additional oracle queries used                               & 0 \\
+Pixel-wise matching conditions applied per pixel             & 3 \\
+Unique match guaranteed per pixel per channel                & \textbf{True} \\
+Key knowledge required                                       & None \\
+\bottomrule
 \end{tabular}
 \end{table}
 
-Since one of the shares is missing, reconstruction becomes impossible. The SSIM is very close to
-0 (even being slightly less than zero for certain classes), whereas PSNR only slightly
-exceeds the noise level. The output of the decoding process does not make sense and bears no structural similarity to the original digits.
+\subsection{Full Decryption Without the Secret Key}
+\label{subsec:exp_phase3}
 
-% ---
-\subsubsection{Case (c): Two Shares Missing}
+The image reconstruction process, $\hat{P}$, consisted of simply arranging the channel matches produced in Phase~2. No part of the real secret key, namely the Hénon parameters, the logistic map parameters, or even any information regarding intermediate cipher states were involved at any stage.
 
-Table~\ref{tab:xor_miss2} reports reconstruction quality when two of the four
-XOR shares are withheld. The visual result for the digit ``7'' is shown in
-Fig.~\ref{fig:all_results}(c).
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
-\caption{Reconstruction Quality with Two XOR Shares Missing.}
-\label{tab:xor_miss2}
-\begin{tabular}{|c|c|c|}
-\hline
-\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
-\hline
-Image 1   & 0.7396 & 11.84 \\
-Image 2   & 0.6422 &  9.56 \\
-Image 3   & 0.8428 & 14.81 \\
-Image 4   & 0.6106 &  8.17 \\
-Image 5   & 0.7120 & 11.76 \\
-\hline
-\textbf{Average} & $\mathbf{\approx 0.7094}$ & $\mathbf{\approx 11.23}$ \\
-\hline
-\end{tabular}
-\end{table}
-
-Surprisingly, when two shares are missing, the SSIM values obtained
-are slightly higher ($\approx 0.71$). This unexpected behavior can be attributed
-to the structured manner of the XOR construction combined with assumptions made
-about the dataset: when two shares are missing, then the two remaining shares
-contain a linear combination of the secret and the decoder exploits statistical
-properties of MNIST images. However, this does not mean that the decoding
-results are high-quality; rather, the output is distorted and should not
-be considered a security threat.
-
-% ---
-\subsubsection{Case (d): Three Shares Missing}
-
-Table~\ref{tab:xor_miss3} reports reconstruction quality when only one of the
-four XOR shares is available (three shares missing). The visual output for the
-digit ``7'' is shown in Fig.~\ref{fig:all_results}(d).
-
-\begin{table}[htbp]
-\centering
-\caption{Reconstruction Quality with Three XOR Shares Missing (Only One Share Available).}
-\label{tab:xor_miss3}
-\begin{tabular}{|c|c|c|}
-\hline
-\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
-\hline
-Image 1   & 0.7396 & 11.84 \\
-Image 2   & 0.6422 &  9.56 \\
-Image 3   & 0.8428 & 14.81 \\
-Image 4   & 0.6106 &  8.17 \\
-Image 5   & 0.7120 & 11.76 \\
-\hline
-\textbf{Average} & $\mathbf{\approx 0.7094}$ & $\mathbf{\approx 11.23}$ \\
-\hline
-\end{tabular}
-\end{table}
-
-The figures computed using three missing shares match those calculated using two
-missing shares. This is due to the symmetry inherent in the XOR design where
-the available shares contain equivalent amounts of partial information regarding
-the secret and utilize the same data set prior knowledge for decoding. The low
-SSIM scores have no impact on the reliability of the images produced since
-these values are within expectations from the information-theoretic security
-bounds of the XOR protocol~\cite{tuyls2005capacity} and other works involving
-neural network decoding with missing input data~\cite{pathak2016context}.
-
-% ===========================
-\subsection{Configuration 2: Decoding with Three Consecutive XOR Shares}
-
-The decoder model was then trained only on subsets consisting of three sequential
-shares; specifically, shares $\{1,2,3\}$ and $\{2,3,4\}$ to investigate whether a model optimized
-for the small input scenario could identify patterns that would circumvent the security barrier.
-Figures~\ref{fig:all_results}(e) and~\ref{fig:all_results}(f) present the visualizations of results for digit ``7''.
-
-
-\begin{table}[htbp]
-\centering
-\caption{Reconstruction Quality Using XOR Shares \{1,2,3\}.}
-\label{tab:xor123}
-\begin{tabular}{|c|c|c|}
-\hline
-\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
-\hline
-Image 1   & 0.1988 & 12.42 \\
-Image 2   & 0.2042 & 10.99 \\
-Image 3   & 0.2024 & 13.96 \\
-Image 4   & 0.2243 &  9.86 \\
-Image 5   & 0.2093 & 12.65 \\
-\hline
-\textbf{Average} & $\mathbf{\approx 0.2078}$ & $\mathbf{\approx 11.98}$ \\
-\hline
-\end{tabular}
-\end{table}
-
-\begin{table}[htbp]
-\centering
-\caption{Reconstruction Quality Using XOR Shares \{2,3,4\}.}
-\label{tab:xor234}
-\begin{tabular}{|c|c|c|}
-\hline
-\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
-\hline
-Image 1   & 0.1989 & 12.42 \\
-Image 2   & 0.2046 & 10.99 \\
-Image 3   & 0.2027 & 13.96 \\
-Image 4   & 0.2242 &  9.86 \\
-Image 5   & 0.2094 & 12.65 \\
-\hline
-\textbf{Average} & $\mathbf{\approx 0.2080}$ & $\mathbf{\approx 11.98}$ \\
-\hline
+\caption{CPA decryption accuracy metrics.}
+\label{tab:phase3_results}
+\begin{tabular}{lc}
+\toprule
+Metric & Value \\
+\midrule
+Total oracle queries                                         & 256 \\
+CPA-decrypted image matches true plaintext ($\hat{P} = P$)  & \textbf{True} \\
+Max pixel difference                                         & 0 \\
+Mean pixel difference                                        & 0.000000 \\
+Pixel-match rate                                             & 100\% \\
+\bottomrule
 \end{tabular}
 \end{table}
 
 
-Both sets of low SSIM ($\approx 0.21$) and PSNR ($< 12$ dB) scores suggest that the decoder trained on an incomplete set cannot reconstruct the image, irrespective of whether the first or second share is lost. The reason behind this is that the problem is under-determined since the lost entropy cannot be retrieved from the available data, which is true for XOR-based secret-sharing schemes based on information-theoretic security.
-%--------------------------------------------------
+\begin{table}[H]
+\centering
+\tiny
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{0.8}
+\caption{Summary of the chosen-plaintext attack on the MMCBIE scheme. Total oracle queries: $256$.}
+\label{tab:attack_summary}
+\resizebox{0.8\linewidth}{!}{
+\begin{tabular}{llccc}
+\toprule
+Phase & Goal & Oracle calls & Items recovered & Perfect match \\
+\midrule
+1 & Probe lookup table $\{C^{(v)}\}_{v=0}^{255}$ & 256 & 256 full ciphertext images & Yes \\
+2 & Plaintext $\hat{P}$ via channel matching & 0 & Full image, all channels & Yes ($\Delta=0$) \\
+\midrule
+\textbf{Total} & & \textbf{256} & & \textbf{Exact recovery} \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+\noindent It is evident from the outcomes that an image encrypted by MMCBIE is possible to recover completely through just $256$ queries of the oracle, regardless of the image's size. Therefore, MMCBIE is \emph{entirely insecure} in the CPA model even considering that it uses a $512$ bit-long key. As the following analysis proves, good results for NPCR, UACI, and Entropy do not mean cryptographic security~\cite{wen2023cryptanalysis}.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/original_baboon.png}
+        \caption{Original Image}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/encrypted_baboon.png}
+        \caption{MMCBIE Encrypted}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{images/decrypted_baboon.png}
+        \caption{CPA Decrypted}
+    \end{subfigure}
+    \caption{Comparison of original, encrypted, and CPA-decrypted images. The decrypted image is pixel-identical to the original.}
+\end{figure}
+
+
+\subsection{Root Cause Analysis: Why the Scheme is Broken}
+\label{subsec:root_cause}
+
+Three mutually reinforcing design defects collectively explain the attack's success.
+
+\textbf{Defect 1: Plaintext-independent chaotic keystreams.}
+However, since both the Hénon map and the 2D-Logistic map have their initial seeds drawn solely from their corresponding fixed subkeys $(x_H, y_H)$ and $(x_L, y_L, R)$, without taking any inputs from the plaintext image, the chaos matrices that will be produced by them will remain consistent throughout the entire set of images encrypted using the exact same key. In fact, a cipher where its keystream does not depend on the plaintext itself will essentially become a one-time pad cipher, which is inherently insecure to attacks involving chosen-plaintext~\cite{wen2023cryptanalysis}. This is precisely why the probe lookup table works as expected: encryption of the same constant value $v$ will result in the same ciphertext, no matter what the plaintext actually is.
+
+\textbf{Defect 2: Bijectivity of the per-pixel encryption function.}
+The application of the XOR operation on $H[k]$, the addition of the key byte mod $256$, and the XOR operation on $L[k]$ yields a bijection in $\mathbb{Z}_{256}$. Although the property of bijectivity can be viewed positively in block ciphers, in our context it ensures that the 256-probe ciphertexts in the lookup table will contain all possible values for any pixel position $k$ and any particular channel, without any duplications whatsoever. Hence the matching criteria in equations \eqref{eq:match_g}--\eqref{eq:match_r} will result in an unambiguous determination of the plaintext, ensuring accuracy.
+
+\textbf{Defect 3: Channel cross-coupling without plaintext dependence.}
+During the Key Mixing phase, the green plaintext channel feeds into the red ciphertext channel, the blue plaintext channel feeds into the green ciphertext channel, while the red plaintext channel feeds into the blue ciphertext channel. It appears that the cross-coupling was added for the purpose of introducing confusion between the channels, but since the chaotic streams are independent of the plaintext, they can easily be removed by means of the probe-and-match approach. With one constant probe, all three channels will have the same value $v$, thus only 256 oracle queries are necessary to break all three plaintext channels in parallel. In case the chaotic streams depended on the plaintext, the cross-coupling would introduce some nonlinearities.
+
+When all the weaknesses occur at once, the protection offered by the proposed scheme becomes equivalent to the process of table look-up only. The adversary will not have to find out the secret key, reverse any chaotic function, or solve any set of equations. The whole idea will boil down to simply encrypting 256 images and then looking up for the ciphertext value in a pre-built lookup table in order to get the plaintext values. This makes the proposed scheme insecure in the chosen-plaintext setting.
+
+\subsection{Recommendations for Strengthening Against Chosen-Plaintext Attacks}
+\label{subsec:recommendations}
+
+The analysis in this paper highlights three essential flaws within the structure of MMCBIE, which together facilitate an elementary chosen plaintext attack. The following suggestions aim to rectify each flaw individually, providing insight into the construction of future chaos-based image encryption techniques.
+
+\subsubsection{Plaintext-Dependent Chaos Initialisation}
+
+The single most important change, however, would be to integrate the
+chaos in the generation of the keystream directly into the plaintext
+itself. As explained in Section~\ref{subsec:root_cause}, since neither $H[k]$
+nor $L[k]$ depends on the plaintext at all, MMCBIE boils down to using a
+reusable pad, which is unconditionally insecure against chosen plaintext
+attacks.
+
+\begin{itemize}
+    \item \textbf{IV perturbation using hashes.} Before applying encryption,
+    calculate the hash of the plaintext image $\mathcal{H}(P)$ and combine
+    it via an XOR operation with the chaotic initial states for both
+    generators. As the value of $\mathcal{H}(P)$ varies for each new
+    plaintext, each pair of chaos matrices $H$ and $L$ becomes unique for
+    each new plaintext, rendering the probe LUT useless when applied to a
+    different plaintext.
+
+    \item \textbf{Feedback coupling in chaos generation.} Instead of
+    generating the chaos from static initial conditions, use the encrypted
+    pixels periodically to reset the chaotic system state through some
+    function. This results in dependencies between image regions,
+    meaning that encrypting a probe image consisting of identical pixel
+    values will no longer replicate the oracle behaviour on a real
+    image.
+
+    \item \textbf{Adding nonce into IV.} In addition to the chaotic
+    initial conditions, a unique random value can be used for each
+    encryption and included into the IV, ensuring that even two
+    identical plaintexts result in different ciphertexts and hence cannot
+    be probed successfully.
+\end{itemize}
+
+\subsubsection{Strong Inter-Pixel Diffusion}
+
+The separability of the MMCBIE encryption algorithm in terms of pixels is what makes it possible for the attack to run separately for each pixel location. It is necessary for a robust technique to be able to make changes spread throughout the entire area of the image such that the encryption of any one pixel is dependent on other pixels.
+
+\begin{itemize}
+    \item \textbf{Global permutation before the diffusion step.} Performing a
+    global pixel permutation---dependent on the plaintext---such as the
+    Arnold cat map based on the hash of the plaintext itself---before the
+    diffusion stages renders impossible the assumption of independence upon which
+    the CPA relies. The permutation of the pixels will ensure that the ciphertext
+    of the probe will not be identical to that of the plaintext, since Equations
+    \eqref{eq:match_g} and \eqref{eq:match_r} will not hold anymore.
+
+    \item \textbf{Chaining diffusion with carry propagation.} Chaining together
+    the diffusions in Stage~3 through a sum modulo 256, for instance,
+    \begin{equation}
+        C[k] = \bigl(B[k] \oplus L[k] \oplus C[k-1]\bigr) \bmod 256,
+        \label{eq:chained_diff}
+    \end{equation}
+    will guarantee that any given ciphertext value is dependent upon the entire
+    sequence before. In turn, changing one bit of the plaintext will cause an avalanche
+    effect in the entire ciphertext, overcoming the lack of this effect in the scheme.
+
+    \item \textbf{Two or more diffusion rounds.} By performing two or more rounds
+    of permutation and diffusion, the dependency of each ciphertext value on a greater
+    number of plaintext values renders the independence assumption for the attack invalid.
+\end{itemize}
+
+\subsubsection{Plaintext-Dependent and Non-Linear Key Mixing}
+
+However, in the key mixing stage of MMCBIE, the linear modular addition is deterministic,
+using a key stream with a period of 8. Hence, due to this deterministic approach, there
+is no security provided by this stage once the chaos streams become vulnerable to the
+probe table, because there are just eight points at which the exploit could be done.
+
+\begin{itemize}
+    \item \textbf{Use of substitution box}. The substitution of the modular
+    addition with a substitution box (S-box), based on e.g., a chaotic Latin
+    square~\cite{hua2021sbox}, adds true nonlinearity and stops the mapping
+    from being a bijective function whose enumerations take only 256 oracle
+    queries.
+
+    \item \textbf{Key schedule with period cycling}. Expanding the lengths
+    of key-mixing arrays $MK_R$, $MK_G$, and $MK_B$ to $MN$ from 8 removes
+    the periodicity that limits the complexity of Stage~2 to 8 bits. In
+    actual implementation, this can be done by generating a longer subkey with
+    a pseudo-random generator seeded with the master key.
+
+    \item \textbf{Data-driven cross-channel operations}. As an improvement
+    over a predetermined rotation pattern (G to R, B to G, R to B), the
+    cross-channel relationships must be determined using either the plaintext
+    data or a function of the key/plaintext combination having high entropy.
+\end{itemize}
+\subsubsection{Security Validation Beyond Statistical Metrics}
+
+A general lesson from this study is that good scores for NPCR, UACI, and
+Shannon entropy cannot guarantee cryptographic security~\cite{wen2023cryptanalysis}.
+These metrics provide information about the statistical behavior of the
+ciphertext distribution but fail to evaluate resistance against active attacks in
+the chosen plaintext/ciphertext model scenarios. For future designs, security
+guarantees such as IND-CPA security need to be verified along with applying
+standard cryptanalytic methods---differential, linear, and algebraic attacks.
+Consequently, this will prevent the use of flawed schemes in security-sensitive IoT
+settings.
+
+
 \section{Conclusion}
 
-This work examined the robustness of XOR-based visual secret sharing schemes under learning-based adversaries. Neural networks can approximate the reconstruction function when all four shares are available, achieving near-lossless results (SSIM $= 0.9720$, PSNR $= 33.87$~dB), showing that data-driven models can learn the full mapping when complete information is present.
+For the analysis, we use the chosen-plaintext model to examine the chaotic image encryption technique MMCBIE presented by Jain et al.\cite{jain2024mmcbie}. Despite being based on several chaotic maps, including the H\'enon map, a cyclic key mixing step, and a two-dimensional logistic map, the technique has been proven to be vulnerable because of weak diffusion and inherent structural properties.
 
-However, reconstruction fails under missing-share conditions, where performance drops significantly and meaningful recovery becomes infeasible. This confirms that the XOR scheme retains its information-theoretic security against learning-based attacks with insufficient shares.
+Weaknesses in the technique arise from insufficient dependency of adjacent pixels and channels. Transformations applied in the encryption technique are performed independently and follow a certain pattern; thus, there still remain correlations between corresponding plaintext and ciphertext values. Specifically, dependencies arising in the key mixing operation applied on each channel remain unchanged; moreover, the lack of feedback leads to ineffective diffusion of alterations.
+
+Based on the above features, an efficient attack strategy is developed. By making requests to the oracle encryption service for constant images within the whole range of pixels, we obtain cipher texts. Comparing them with the target ciphertext using simple equality checks allows us to retrieve original plaintext values bit by bit. It should be noted that in this way, we do not need to restore chaotic series, secret parameters, or keys.
+
+Theoretically and experimentally, it was proved that using the above attack, exact restoration of the original image is possible using no more than 256 queries. In other words, we demonstrate a total failure of the encryption scheme despite its excellent results in statistics tests such as NPCR, UACI, and entropy.
+
+These findings confirm one of the basic tenets of cryptography: Statistical randomness is not enough to ensure security from active attacks. In order for chaos-based image cryptosystems to be considered secure, it is imperative that they use diffusive functions, have inter-pixel and inter-channel interactions, and employ non-linear functions that depend on the plain-image input.
