@@ -2,5 +2,251 @@
 \chapter{Autoencoder-based SIS Scheme}
 % ─────────────────────────────────────────────────────────────────────────────
 
+\section{Introduction}
 
-Add content from last sem report
+With the rapid growth of deep learning, neural network-based approaches have become effective for image representation and compression. In the context of Secret Image Sharing (SIS), traditional methods rely on polynomial interpolation or logical operations, which often face limitations in storage efficiency and scalability. To address these issues, autoencoder-based approaches provide a data-driven alternative.
+
+An autoencoder is a neural network architecture designed to learn compact latent representations of input data. It consists of two main components: an encoder that compresses the input image into a lower-dimensional latent vector, and a decoder that reconstructs the image from this representation. This property makes autoencoders suitable for reducing redundancy while preserving essential image features.
+
+In this work, an autoencoder-based SIS framework is considered, where the encoder transforms the input image into a compressed latent space. This latent representation is then divided into multiple independent shares. These shares are distributed such that only a sufficient combination of them enables reconstruction. The decoder utilizes the combined latent information to recover the original image.
+
+Unlike conventional SIS schemes, this approach achieves significant reduction in share size due to learned compression, while maintaining high reconstruction quality. Experimental results show that the method preserves structural similarity and minimizes information loss, demonstrating its effectiveness for secure and storage-efficient image sharing.
+
+This highlights the potential of integrating deep learning techniques, specifically autoencoders, into SIS systems to improve both efficiency and reconstruction performance.
+
+
+\section{Preliminaries}
+\label{sec:lad-prelim}
+
+
+Autoencoders are a type of artificial neural network used for unsupervised learning. Their objective is to learn a compressed representation of input data and reconstruct the original data from this representation. The architecture of an autoencoder consists of the following components:
+
+\begin{enumerate}
+    \item \textbf{Input Layer:} Receives the original data such as image pixels or feature vectors.
+
+    \item \textbf{Encoder:} Transforms the input into a lower-dimensional representation using a sequence of linear operations and nonlinear activation functions (e.g., ReLU, sigmoid). This step reduces dimensionality while retaining important features.
+
+    \item \textbf{Latent Space (Bottleneck Layer):} Represents the compressed form of the input data. Based on its size:
+    \begin{itemize}
+        \item \textbf{Undercomplete Autoencoder:} Latent dimension $<$ input dimension, enforcing compression.
+        \item \textbf{Overcomplete Autoencoder:} Latent dimension $>$ input dimension, allowing richer representations.
+    \end{itemize}
+
+    \item \textbf{Decoder:} Reconstructs the original input from the latent representation using transformations similar to the encoder.
+
+    \item \textbf{Output Layer:} Produces the reconstructed data. The network is trained to minimize reconstruction error, commonly using Mean Squared Error (MSE).
+\end{enumerate}
+
+\section{Evaluation Metrics}
+
+To evaluate reconstruction performance in Secret Image Sharing (SIS), two standard metrics are used: Peak Signal-to-Noise Ratio (PSNR) and Structural Similarity Index Measure (SSIM).
+
+\subsection{Peak Signal-to-Noise Ratio (PSNR)}
+
+PSNR measures the ratio between the maximum signal power and the noise affecting reconstruction quality. It is expressed in decibels (dB).
+
+\[
+PSNR = 10 \cdot \log_{10} \left( \frac{peakval^2}{MSE} \right)
+\]
+
+where:
+\begin{itemize}
+    \item $peakval$ is the maximum possible pixel value (e.g., 255 for 8-bit images),
+    \item $MSE$ is the Mean Squared Error between original and reconstructed images.
+\end{itemize}
+
+Higher PSNR indicates better reconstruction quality.
+\subsection{Structural Similarity Index Measure (SSIM)}
+
+SSIM evaluates image similarity based on human visual perception by considering three main components: luminance similarity, which measures brightness consistency; contrast similarity, which evaluates differences in intensity variation; and structural similarity, which captures the relationship between neighboring pixels.
+
+The SSIM value ranges from 0 to 1, where a value of 1 indicates identical images, and values closer to 0 indicate lower similarity between the images.
+
+
+
+\section{Literature Review}
+\label{sec:lad-litreview}
+
+
+XOR-based Secret Image Sharing (SIS) schemes have been widely studied due to their low computational complexity and ease of implementation. These methods rely on simple Boolean operations, making them suitable for real-time and resource-constrained applications.
+
+Wang et al.~\cite{wang_xor_basic} proposed a basic $(n,n)$ SIS scheme where $(n-1)$ random matrices are generated and the final share is computed using XOR operations with the secret image. The reconstruction is performed by XORing all shares. This method avoids pixel expansion and preserves image quality across binary, grayscale, and color images. However, the size of each shadow image remains equal to the original image.
+
+Chattopadhyay et al.~\cite{chattopadhyay_hash} extended XOR-based SIS by incorporating hash-based verification to detect tampered shares before reconstruction. Although this improves integrity, it does not address the issue of storage overhead, as share sizes remain unchanged.
+
+Chen and Wu~\cite{chen_wu_msis, chen_wu_secure} introduced multiple secret image sharing (MSIS) schemes using Boolean operations. Their approach allows multiple images to be encoded into a single set of shares. Later improvements added randomization to prevent information leakage when insufficient shares are available. Despite these enhancements, the share size remains equal to the original image size.
+
+Nag et al.~\cite{nag_boolean} proposed a Boolean-based MSIS scheme where share size can increase depending on the number of secrets, leading to higher storage requirements. Lin et al.~\cite{lin_cycling_xor} developed a key-free SIS scheme using a Cycling-XOR mechanism, embedding shares into cover images for improved concealment. However, the share size is still not reduced.
+
+To address storage inefficiency, Ou et al.~\cite{ou_btc} proposed a scheme based on block truncation coding and error diffusion, achieving significant reduction in share size. Similarly, Purushothama B. R.~\cite{purushothama_size} introduced a method that reduces shadow image dimensions to $\lceil h/n \rceil \times w$, improving storage efficiency compared to traditional XOR schemes.
+
+Further advancements include extending XOR-based methods to multi-secret scenarios. Kabirirad and Eslami~\cite{kabirirad_eslami} proposed a $(t,n)$ threshold MSIS scheme using Boolean operations, enabling flexible reconstruction. However, the method depends on sequential share availability and does not reduce share size. Faraoun~\cite{faraoun_crypto} proposed a secure MSIS scheme combining stream ciphers and XOR-based key sharing, but the generated shares remain equal in size to the original images.
+
+Overall, while XOR-based SIS schemes offer simplicity and efficiency, most approaches suffer from the limitation of large shadow image sizes. This motivates the exploration of alternative techniques, such as learning-based compression methods, to improve storage efficiency without compromising security.
+
+
+\section{Work Done}
+\label{sec:lad-work}
+
+An autoencoder-based Secret Image Sharing (SIS) scheme is implemented using a deep convolutional architecture for grayscale images. The system encodes an input image into a compact latent representation and divides it into multiple independent shares. Each share contains partial information, and reconstruction is possible only when all shares are combined.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+node distance=0.4cm and 0.4cm,
+block/.style={rectangle, draw, text width=2.6cm, align=center},
+scale=0.7, transform shape
+]
+
+  \node[block] (input)
+    {Input Image\\$128 \times 128 \times 1$};
+
+  \node[block, below=of input] (encoder)
+    {Encoder Network:\\Conv + BN + Residual Blocks};
+
+  \node[block, below=of encoder] (latent)
+    {Latent Vector\\($L = 1024$)};
+
+  \node[block, below left=0.4cm and 0.6cm of latent] (split)
+    {ShareSplitter:\\Divide into 4 Shares};
+
+  \node[block, below right=0.4cm and 0.6cm of latent] (shares)
+    {Shares $S_1, S_2, S_3, S_4$};
+
+  \node[block, below=1.2cm of latent] (dist)
+    {Distribution};
+
+  \node[block, below=of dist] (combine)
+    {ShareCombiner:\\Concatenate};
+
+  \node[block, below=of combine] (decoder)
+    {Decoder Network:\\Upsampling + Residual Blocks};
+
+  \node[block, below=of decoder] (output)
+    {Reconstructed Image};
+
+  \draw[->] (input) -- (encoder);
+  \draw[->] (encoder) -- (latent);
+  \draw[->] (latent) -- (split);
+  \draw[->] (latent) -- (shares);
+  \draw[->] (split) -- (dist);
+  \draw[->] (shares) -- (dist);
+  \draw[->] (dist) -- (combine);
+  \draw[->] (combine) -- (decoder);
+  \draw[->] (decoder) -- (output);
+
+\end{tikzpicture}
+\caption{Autoencoder-Based Secret Image Sharing Framework}
+\label{fig:autoencoder_sis}
+\end{figure}
+
+\subsection{Encoder Network}
+
+The encoder processes an input image of size $128 \times 128 \times 1$ and converts it into a latent vector of size $L = 1024$.
+
+\begin{itemize}
+    \item \textbf{Convolutional Downsampling:} Three convolutional layers with filters $(32, 64, 128)$ and stride 2 are used to reduce spatial dimensions and extract hierarchical features. Each layer uses ReLU activation followed by Batch Normalization.
+
+    \item \textbf{Residual Blocks:} Residual connections are used to preserve features and stabilize training. Each block follows:
+    \[
+    \text{Output} = \text{ReLU}(x + F(x))
+    \]
+    where $F(x)$ represents convolutional transformations.
+
+    \item \textbf{Latent Representation:} The final feature maps are flattened and passed through a fully connected layer to produce a 1024-dimensional latent vector.
+\end{itemize}
+
+\subsection{Share Generation}
+
+The latent vector is divided into four equal shares using a non-trainable splitting operation:
+
+\[
+S_i = \text{latent}\left[(i-1)\frac{L}{4} : i\frac{L}{4}\right], \quad i = 1,2,3,4
+\]
+
+Each share is independent, and fewer than four shares do not provide sufficient information for reconstruction.
+
+\subsection{Decoder Network}
+
+The decoder reconstructs the original image by combining all shares and reversing the encoding process.
+
+\begin{itemize}
+    \item \textbf{Share Combination:} The shares are concatenated to reconstruct the latent vector:
+    \[
+    \text{latent}_{recon} = \text{concat}(S_1, S_2, S_3, S_4)
+    \]
+
+    \item \textbf{Feature Upsampling:} The latent vector is expanded into a $16 \times 16 \times 128$ feature map and upsampled using transposed convolution layers to restore spatial resolution.
+
+    \item \textbf{Residual Refinement:} Residual blocks are used to refine reconstructed features and improve image quality.
+
+    \item \textbf{Output Layer:} A final transposed convolution layer with sigmoid activation produces the reconstructed grayscale image in the range $[0,1]$.
+\end{itemize}
+
+\subsection{Training Objective}
+
+The model is trained end-to-end using Mean Squared Error (MSE) loss:
+
+\[
+L_{MSE} = \frac{1}{N} \sum_{i=1}^{N} (I_i - \hat{I}_i)^2
+\]
+
+where $I_i$ and $\hat{I}_i$ represent original and reconstructed pixel values. The network is optimized using the Adam optimizer with learning rate $\alpha = 10^{-3}$, batch size 32, and trained for 20 epochs.
+
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Results and Analysis}
+\label{sec:lad-results}
+
+This section presents the experimental evaluation of the autoencoder-based Secret Image Sharing (SIS) scheme. The model is evaluated on grayscale images using reconstruction quality, share security, and storage efficiency as primary criteria.
+
+\subsection{Dataset and Training}
+
+The model is trained on the MNIST dataset, where images are resized to $128 \times 128 \times 1$ and normalized to $[0,1]$. A total of 60,000 images are used for training and 10,000 for testing. The network is trained for 20 epochs using Mean Squared Error (MSE) loss and the Adam optimizer. The training and validation losses show consistent convergence, reaching a minimum validation loss of approximately $7.5 \times 10^{-5}$, which indicates high reconstruction accuracy.
+
+\subsection{Reconstruction Performance}
+
+The reconstructed images are visually close to the original inputs, with only minor pixel-level deviations. Quantitatively, the reconstructed outputs achieve PSNR values greater than 30 dB, indicating high-quality reconstruction, while SSIM values remain close to 1.0, confirming strong structural similarity. These results demonstrate that the autoencoder effectively preserves important image features during encoding and decoding.
+
+\subsection{Share Security Analysis}
+
+Each latent vector is divided into four independent shares. The individual shares exhibit very low similarity to the original image, with SSIM values approximately in the range of $0.05$ to $0.1$ and PSNR values below 10 dB. This behavior confirms that individual shares do not reveal any visible or structural information about the original image, thereby ensuring strong confidentiality.
+
+\subsection{Storage Efficiency}
+
+The original image size is $128 \times 128 = 16384$ pixels, which corresponds to approximately 64 KB in float representation. The latent representation reduces this to 1024 values, resulting in a total size of approximately 1 KB for all shares combined. Each individual share occupies approximately 0.25 KB. This corresponds to an overall storage reduction of about 98\%, demonstrating a significant improvement compared to traditional SIS schemes where share sizes are equal to the original image.
+
+\subsection{Analysis Summary}
+
+The proposed method achieves high reconstruction quality with strong structural similarity, ensures security by preventing information leakage from individual shares, and significantly reduces storage requirements. However, the reconstruction is not perfectly lossless due to compression in the latent space, which introduces minor smoothing artifacts in the reconstructed images.
+\section{Result Visualization}
+
+\begin{figure}[htbp]
+\centering
+\begin{tabular}{cc}
+\includegraphics[width=0.3\linewidth]{images/original.png} &
+\includegraphics[width=0.3\linewidth]{images/reconstructed.png} \\
+Original & Reconstructed \\
+\end{tabular}
+
+\vspace{0.3cm}
+
+\begin{tabular}{cccc}
+\includegraphics[width=0.2\linewidth]{images/share1.png} &
+\includegraphics[width=0.2\linewidth]{images/share2.png} &
+\includegraphics[width=0.2\linewidth]{images/share3.png} &
+\includegraphics[width=0.2\linewidth]{images/share4.png} \\
+Shadow 1 & Shadow 2 & Shadow 3 & Shadow 4 \\
+\end{tabular}
+
+\caption{Autoencoder-based SIS results showing original image, reconstructed image, and generated shares}
+\label{fig:results_autoencoder}
+\end{figure}
+
+\section{Conclusion}
+
+This work presents an autoencoder-based Secret Image Sharing (SIS) scheme that leverages deep learning for secure and storage-efficient image distribution. The proposed method encodes images into a compact latent representation and divides it into multiple independent shares, ensuring that no single share reveals meaningful information about the original image.
+
+The experimental results demonstrate that the model achieves high reconstruction quality, with PSNR values above 30 dB and SSIM values close to 1.0. At the same time, individual shares exhibit very low similarity to the original image, confirming strong confidentiality. A major advantage of the approach is the significant reduction in storage requirements, achieving up to 98\% compression compared to the original image size.
+
+However, the method introduces minor reconstruction loss due to the lossy nature of latent space compression. Despite this, the overall performance indicates that autoencoder-based SIS is an effective alternative to traditional schemes, offering a balance between security, compression, and reconstruction quality.
