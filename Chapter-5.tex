@@ -190,7 +190,7 @@ training involves learning the following transformation:
     f_\theta : \mathbb{R}^{128 \times 128 \times 4} \rightarrow \mathbb{R}^{128 \times 128}.
 \]
 The loss function employed for training is binary cross-entropy, and the model is
-trained for 20 epochs using the Adam optimizer~\cite{kingma2015adam}. The trained
+trained for 20 epochs using the Adam optimizer. The trained
 model is tested for various scenarios involving different shares, where the missing
 shares are filled with zeros.
 
@@ -214,11 +214,11 @@ in Configuration 1.
 \subsection{Decoder Architecture}
 
 For both configurations, we use a convolutional neural network with
-residual connections~\cite{he2016deep}. The CNN includes an initial
+residual connections. The CNN includes an initial
 convolution layer for low-level feature extraction, followed by several
 blocks that utilize residual connections in order to conserve spatial
 information and facilitate learning. Additionally, the network uses
-batch normalization~\cite{ioffe2015batch}, dropout~\cite{srivastava2014dropout},
+batch normalization~\cite{ioffe2015batch}, dropout,
 and a sigmoid activation on the output node that produces the reconstructed
 image.
 
@@ -320,7 +320,7 @@ Image 5   & 0.9626 & 32.28 \\
 \end{tabular}
 \end{table}
 
-The reconstructions are highly similar to the input, with global structure and fine details being preserved. The high values for SSIM and PSNR suggest that the neural network successfully reconstructs an input without loss, which is very similar to classical XOR decoding. This finding supports previous research, which shows that residual CNNs can decode structured linear transformations if enough input is present~\cite{he2016deep}.
+The reconstructions are highly similar to the input, with global structure and fine details being preserved. The high values for SSIM and PSNR suggest that the neural network successfully reconstructs an input without loss, which is very similar to classical XOR decoding. This finding supports previous research, which shows that residual CNNs can decode structured linear transformations if enough input is present.
 
 % ---
 \subsubsection{Case (b): One Share Missing}
@@ -419,8 +419,8 @@ the available shares contain equivalent amounts of partial information regarding
 the secret and utilize the same data set prior knowledge for decoding. The low
 SSIM scores have no impact on the reliability of the images produced since
 these values are within expectations from the information-theoretic security
-bounds of the XOR protocol~\cite{tuyls2005capacity} and other works involving
-neural network decoding with missing input data~\cite{pathak2016context}.
+bounds of the XOR protocol and other works involving
+neural network decoding with missing input data.
 
 % ===========================
 \subsection{Configuration 2: Decoding with Three Consecutive XOR Shares}
