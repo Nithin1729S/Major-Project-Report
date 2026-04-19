@@ -16,7 +16,6 @@ The attack needs at most 256 queries to an oracle, and the complexity is linear 
 \label{sec:lad-prelim}
 
 \subsection{Chaotic Maps}
-\label{subsec:chaotic_maps}
 
 MMCBIE is based on two types of chaotic maps.
 H\'enon chaotic map is used for the first transformation phase 
@@ -25,7 +24,7 @@ The last diffusion stage uses the Two-Dimensional Logistic Chaotic
 Map (2D-LSCM) using the same XOR process. 
 Key-mixing step is placed between the two phases deterministically.
 
-\subsubsection{H\'enon Chaotic Map}
+\subsection{H\'enon Chaotic Map}
 
 The H\'enon map~\cite{henon1976map} is a classical two-dimensional
 discrete-time chaotic system defined by the recurrence
@@ -57,7 +56,7 @@ $(x_i, y_i)_{i=1}^{MN}$ by means of the quantization method
 where indices $(r,c)$ run over rows and columns of the image
 respectively.
 
-\subsubsection{Two-Dimensional Logistic Chaotic Map (2D-LSCM)}
+\subsection{Two-Dimensional Logistic Chaotic Map (2D-LSCM)}
 
 The 2D-LSCM employed by MMCBIE~\cite{hua2019cosine} is a coupled
 nonlinear recurrence given by
