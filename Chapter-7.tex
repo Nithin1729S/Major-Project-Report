@@ -8,8 +8,7 @@
 % ============================================================
  
 With the growth of multimedia communication, images have become a critical carrier of information, whether for personal use or for scientific purposes. In some industries and organizations, it is preferred to store sensitive and confidential data in the form of images. Protecting these images against unauthorized access and tampering has therefore become an important research problem. Several image protection techniques, such as encryption, digital watermarking, visual cryptography, and steganography, have been successful in doing so. However, all of these techniques are dependent on centralized storage as the single information carrier. If the carrier is intercepted or destroyed, it is possible that the image is lost, then the sensitive information is also lost, and hence cannot be recovered. To prevent such occurrences, secret image sharing schemes are in practice, which instead rely on decentralized storage.
- 
-\subsection{Overview}
+
  
 Secret Sharing (SS) provides a cryptographic mechanism in which a secret is divided into multiple shares and distributed among a number of participants. The secret can only be reconstructed when a threshold number of shares is combined, while having fewer than the threshold does not reveal any information about the secret. In secure secret sharing schemes, an attacker that gains access to fewer shares of the secret than defined by the threshold gains no information about the secret. Secret sharing schemes are useful because they allow for more secure storage of highly sensitive data, including encryption keys, missile launch codes, and numbered bank accounts. By distributing the data, there is no single point of failure that can lead to its loss.
  
@@ -21,7 +20,6 @@ The XOR-based SIS approach is one of the most widely adopted and computationally
  
 With the rapid growth in deep learning, we explored the use of neural architectures to enhance traditional SIS frameworks. Due to the ability of autoencoders to learn compact and meaningful latent representations of images, while introducing drastic compression, we employed autoencoder-based approaches. In this project, an \textbf{autoencoder-based SIS scheme} was implemented, where the encoder compresses each image into a latent vector and divides it into multiple independent shares. The decoder then reconstructs the original image from these shares, ensuring a near-perfect recovery with minimal information loss. Unlike traditional polynomial or XOR-based schemes, the autoencoder approach significantly reduces the storage size of shares while maintaining high structural similarity (SSIM $\approx$ 0.99) and reconstruction quality (PSNR $>$ 40 dB). This demonstrates the potential of deep learning models in achieving secure, storage-efficient, and lossless secret image sharing.
  
-\subsection{Motivation}
  
 Secret Image Sharing (SIS) is an important research problem due to the need to protect sensitive images from unauthorized access and distribution. With the increasing use of digital images in various applications, including social media, e-commerce, and entertainment, the need for secure and efficient methods of image sharing is becoming more critical. Sensitive images, such as medical images or scanned copies of government documents, images of military installations, satellite images, court evidence, etc., are prone to illegal access, tampering, and distribution.
  
@@ -214,7 +212,6 @@ The SSIM value ranges from 0 to 1, where:
  
 Over the years, researchers have explored various SIS schemes, including polynomial-based and XOR-based methods, to improve both security and efficiency. Recent studies have focused on reducing the size of generated shadow images to optimize storage and bandwidth usage while maintaining lossless reconstruction. This literature review examines the evolution of SIS schemes, highlighting key advancements in share generation techniques and preprocessing methods aiming to improve performance and applicability.
  
-\subsection{Related Works}
  
 In their comprehensive survey, Saha et al.~\cite{saha2023} categorize SIS approaches into several paradigms, including polynomial-based and XOR-based schemes, each with distinct trade-offs.
  
@@ -231,58 +228,6 @@ Chen and Wu~\cite{chen2011} proposed a multiple secret image sharing scheme (MSI
 Few studies have addressed the limitation of large shadow image sizes in XOR-based and Boolean-based sharing schemes. Ou et al.~\cite{ou2015} propose a user-friendly secret-image sharing scheme based on block truncation coding and error diffusion, where each meaningful share is $\frac{1}{4}$ times smaller the original secret image. Purushothama B.~R.~\cite{purushothama2024} introduced work that focuses on reducing the size of generated shadow images. Unlike traditional $(n, n)$ XOR-based methods that produce shares of size $h \times w$, their approach generates shadow images of size $\lceil h/n \rceil \times w$, significantly improving storage efficiency.
  
 \textbf{XOR-Based Multi-Secret Image Sharing (MSIS):} To increase efficiency, researchers have extended the XOR-based methods to share multiple secret images simultaneously. Chen and Wu~\cite{chen2011} proposed a scheme in which multiple images are encoded into a single set of shadow images by systematically combining bits from different images using XOR operations. Kabirirad--Eslami~\cite{kabirirad2018} extended MSIS to support $(t, n)$-threshold structures using Boolean operations, providing flexibility where $t$ out of $n$ shares can reconstruct the secrets. However, this approach uses $t$ consecutive shares to backtrack and retrieve the secrets, where missing even one breaks the chain, and the shadow image size remains the same as the original image. Faraoun~\cite{faraoun2020} proposed a highly secure $(n, n)$ multi-secret image sharing scheme based on cryptographic hash functions and stream ciphers. This approach encrypts the secret image using a stream cipher with a random session key, then splits the key using XOR chaining among $n$ shares, generating shadow images identical in size to the secret images.
- 
-\subsection{Outcome of the Literature Survey}
- 
-The comprehensive literature survey conducted across various research works on SIS schemes highlights the evolution of techniques used to secure sensitive image data and ensure reliable reconstruction. The survey reveals both the strengths and challenges of classical and modern SIS approaches. The key outcomes are summarized below:
- 
-\begin{enumerate}
-    \item \textbf{Classical Foundations of SIS:} Foundational schemes such as Shamir's polynomial-based threshold scheme and Blakley's geometric approach laid the groundwork for secure image sharing. These schemes guarantee perfect secrecy and lossless reconstruction when the threshold number of shares is met. However, they also introduce a storage overhead, since the generated shadow images are typically equal in size to the original secret image.
- 
-    \item \textbf{Advancements Using Mathematical Frameworks:} Researchers have explored advanced mathematical structures such as the Chinese Remainder Theorem (CRT), Galois Fields (GF), and modular arithmetic to improve computational efficiency and security. These frameworks provide robust operations for encoding and decoding, making them essential for high-security applications like medical imaging and biometric data protection.
- 
-    \item \textbf{XOR-Based and Lightweight Approaches:} XOR-based schemes have emerged as simpler and computationally lightweight alternatives to polynomial-based schemes. While these methods reduce complexity and processing time, they often trade off flexibility and may not provide the same level of resilience against certain attacks.
- 
-    \item \textbf{Reducing Shadow Image Size:} Several recent studies focus on minimizing the size of shadow images to optimize storage and transmission. Techniques such as block-based partitioning, image compression, and preprocessing methods have been proposed. However, these approaches sometimes result in partial data loss or reduced reconstruction accuracy, indicating the need for more efficient solutions.
- 
-    \item \textbf{Security versus Storage Trade-off:} A recurring theme in the literature is the trade-off between security strength and storage efficiency. Highly secure methods tend to generate larger shadow images, whereas schemes that focus on reducing share size may risk compromising either security or reconstruction quality.
- 
-    \item \textbf{Identified Research Gap:} Despite notable progress, there remains a clear gap in designing an SIS scheme that can significantly reduce the size of shadow images while guaranteeing perfect reconstruction of the secret image.
-\end{enumerate}
- 
-In general, the literature survey underscores the critical role of SIS in safeguarding sensitive image data. It also emphasizes the necessity of developing innovative approaches, such as integrating pooling and residual tracking techniques, that address storage inefficiency while ensuring complete and accurate reconstruction of the original image.
- 
-\subsection{Problem Statement}
- 
-The increasing reliance on images for secure communication, authentication, and storage in domains such as defense, healthcare, and digital governance has amplified the importance of Secret Image Sharing (SIS) schemes. Traditional SIS methods, including polynomial-based and XOR-based approaches, guarantee security and lossless reconstruction but suffer from a critical limitation: the generated shadow images are typically equal in size to the original secret image. This results in significant storage and transmission overhead, which restricts their scalability and practical deployment in bandwidth-constrained or resource-limited environments.
- 
-Several efforts have been made to address this inefficiency by incorporating preprocessing techniques, such as block partitioning, compression, and pixel-level transformations. However, these approaches often introduce trade-offs between share size reduction and reconstruction accuracy, sometimes resulting in partial loss of visual quality or increased computational complexity. Moreover, while XOR-based methods are computationally lightweight, they lack inherent mechanisms to reduce share size without compromising robustness.
- 
-Therefore, there exists a pressing need to design a Secret Image Sharing scheme that:
-\begin{enumerate}
-    \item \textbf{Produces smaller shadow images} compared to the original secret, thus improving storage and transmission efficiency.
-    \item \textbf{Ensures lossless reconstruction} of the secret, avoiding any degradation in visual quality.
-    \item \textbf{Maintains robust cryptographic security}, preventing information leakage when fewer than the threshold number of shares are available.
-\end{enumerate}
- 
-This research addresses the above challenge by proposing an integrated SIS framework that combines \textbf{average pooling with residual mapping}, \textbf{permutation-based decorrelation}, and \textbf{XOR-based share generation}. The proposed methodology aims to significantly reduce share sizes while preserving exact recovery of the original secret, thereby bridging the gap between storage efficiency and secure reconstruction in modern SIS systems.
- 
-\subsection{Objectives of the Project}
- 
-This study intends to evaluate and enhance the effectiveness of Secret Image Sharing by solving the following tasks:
-\begin{itemize}
-    \item \textbf{Reduction of Share Sizes} -- Explore preprocessing techniques to minimize the size of generated shadow images while ensuring lossless recovery.
-    \item \textbf{No Compromise of Security} -- Apply necessary techniques to ensure that no entity leaks information about the original image independently.
-    \item \textbf{Integration with XOR-Based Sharing} -- Combine the XOR-based SIS scheme with the optimal framework to generate compact, computationally efficient shadow images.
-\end{itemize}
- 
-\subsection{Summary}
- 
-The survey of existing Secret Image Sharing (SIS) techniques highlights the steady evolution of schemes aimed at balancing security, reconstruction quality, and storage efficiency. Classical approaches, such as the polynomial-based scheme by Wang and Su, guarantee perfect reconstruction but produce shadow images equal in size to the secret, resulting in significant storage and transmission overhead. XOR-based methods, like the Wang--Zhang--Ma--Li scheme, offer computational simplicity and faster execution but similarly lack mechanisms to reduce share size.
- 
-Subsequent research has attempted to mitigate these limitations through preprocessing and transformation techniques, including block partitioning, pixel-level decomposition, and compression-based methods. While these strategies achieve partial reductions in share size, they often come at the cost of either increased computational complexity or degradation in reconstruction fidelity. Studies integrating pooling or multi-resolution analysis show potential in lowering data dimensions, but challenges remain in ensuring that residual information does not compromise security or visual quality.
- 
-From the review, it is evident that existing SIS methods either emphasize cryptographic strength at the expense of efficiency or optimize storage while introducing trade-offs in accuracy or complexity. This gap provides an opportunity to design a framework that can jointly achieve smaller share sizes, lossless reconstruction, and computational efficiency. The insights from prior works directly motivate the integration of pooling, residual mapping, permutation, and XOR-based sharing in this research, aiming to overcome the limitations of earlier approaches.
  
 % ============================================================
 \section{Work Done}

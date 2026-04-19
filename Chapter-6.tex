@@ -37,9 +37,6 @@ Autoencoders are a type of artificial neural network used for unsupervised learn
     \item \textbf{Output Layer:} Produces the reconstructed data. The network is trained to minimize reconstruction error, commonly using Mean Squared Error (MSE).
 \end{enumerate}
 
-\section{Evaluation Metrics}
-
-To evaluate reconstruction performance in Secret Image Sharing (SIS), two standard metrics are used: Peak Signal-to-Noise Ratio (PSNR) and Structural Similarity Index Measure (SSIM).
 
 \subsection{Peak Signal-to-Noise Ratio (PSNR)}
 
@@ -219,7 +216,6 @@ The original image size is $128 \times 128 = 16384$ pixels, which corresponds to
 \subsection{Analysis Summary}
 
 The proposed method achieves high reconstruction quality with strong structural similarity, ensures security by preventing information leakage from individual shares, and significantly reduces storage requirements. However, the reconstruction is not perfectly lossless due to compression in the latent space, which introduces minor smoothing artifacts in the reconstructed images.
-\section{Result Visualization}
 
 \begin{figure}[htbp]
 \centering

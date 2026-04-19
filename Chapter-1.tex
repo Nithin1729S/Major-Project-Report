@@ -41,7 +41,6 @@ This section introduces the foundational concepts and theoretical background req
 \subsection{Log Representation and Anomaly Formulation}
 % ─────────────────────────────────────────────────────────────────────────────
 
-\subsubsection{System Logs}
 
 Every time a software application or operating system performs an operation — starting a service, handling a request, or encountering an error — it records a brief textual message called a \textbf{log entry}. These messages form a continuously growing record of the system's behavior known as a \textbf{system log}. A typical system might produce entries such as:
 
@@ -74,7 +73,6 @@ where $0$ denotes \emph{normal} behavior and $1$ denotes \emph{anomalous} behavi
 \subsection{Token Embedding and Representation Learning}
 % ─────────────────────────────────────────────────────────────────────────────
 
-\subsubsection{Why Embeddings?}
 
 Machine learning models operate on numerical inputs, not raw text. An \textbf{embedding} is a mapping from each word or token to a dense numerical vector, constructed such that tokens with similar meanings are positioned close together in the resulting vector space. For instance, the tokens \texttt{``error''} and \texttt{``failure''} would ideally have similar vector representations, whereas \texttt{``error''} and \texttt{``timestamp''} would be far apart. This geometric structure allows downstream models to reason about semantic similarity without explicit symbolic rules.
 
@@ -97,7 +95,6 @@ Log messages possess a rich internal structure. Within a single message, differe
 \subsection{Self-Attention Mechanism}
 % ─────────────────────────────────────────────────────────────────────────────
 
-\subsubsection{Intuition}
 
 Not every token in a log message is equally relevant to understanding every other token. Consider the message: \texttt{``User admin login failed at port 22.''} To correctly interpret why \texttt{``failed''} is significant, a model must attend to \texttt{``login''} — not merely to the adjacent words. The \textbf{self-attention mechanism}~\cite{vaswani2017attention} allows each token to dynamically focus on, or \emph{attend to}, whichever other tokens are most relevant to it, regardless of their positional distance in the sequence. This is a key advantage over recurrent architectures, which struggle to propagate long-range dependencies through many sequential steps.
 
@@ -143,7 +140,6 @@ The vector $z_i$ is referred to as the \textbf{contextual representation} of tok
 Log anomaly detection has been extensively studied as a critical technique for guaranteeing reliability and security in large-scale distributed systems. The field has evolved through several distinct paradigms — from classical statistical methods to deep sequence models and, most recently, transformer-based and large language model (LLM) approaches. This section surveys the key developments across these phases.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\subsection{Classical and Parsing-Based Methods}
 % ─────────────────────────────────────────────────────────────────────────────
 
 Early research applied mining-based techniques to console logs using statistical and clustering-based approaches~\cite{xu2009detecting, lou2010mining, makanju2009clustering}. These methods operated by first extracting structured log templates and then applying anomaly detection on the resulting event representations. PCA-based detection on event count vectors~\cite{xu2009detecting} and invariant mining~\cite{lou2010mining} were among the most prominent techniques in this category. However, they were fundamentally limited by their dependence on accurate log parsing as a prerequisite step.
@@ -151,7 +147,6 @@ Early research applied mining-based techniques to console logs using statistical
 To address the parsing bottleneck, dedicated log parsers such as Drain~\cite{he2017drain} and LogCluster~\cite{vaarandi2015logcluster} were developed to automatically extract structured templates from raw log text. Standardized benchmarks and toolkits~\cite{zhu2019tools} were subsequently introduced to evaluate and compare parsing-based pipelines systematically. Despite these advances, comprehensive evaluations revealed that parser error rates on complex real-world logs ranged from 14\% to 89\%, with cascading degradation in downstream detection performance of up to 50\%~\cite{zhu2019tools}. This exposed a fundamental fragility in the two-stage parse-then-detect paradigm.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\subsection{Deep Learning-Based Methods}
 % ─────────────────────────────────────────────────────────────────────────────
 
 The limitations of classical approaches motivated the adoption of deep learning for log anomaly detection. DeepLog~\cite{du2017deeplog} was among the first to employ an LSTM neural network to model sequential dependencies in log event streams, framing anomaly detection as a next-event prediction task: a log entry is flagged as anomalous if the observed event falls outside the top-$k$ predicted candidates. LogAnomaly~\cite{meng2019loganomaly} extended this framework by jointly detecting both sequential anomalies and quantitative anomalies — deviations in the frequency of log event types — providing a more comprehensive detection capability.
@@ -159,7 +154,6 @@ The limitations of classical approaches motivated the adoption of deep learning 
 Robustness to unstable and evolving log formats was addressed in LogRobust~\cite{zhang2019robust}, which leveraged TF-IDF weighted semantic embeddings and an attention-based Bi-LSTM to produce log representations resilient to log evolution and noise. Although these deep learning methods significantly outperformed classical approaches, they continued to depend on a parsing step upstream, inheriting its associated vulnerabilities.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\subsection{Parsing-Free and Transformer-Based Methods}
 % ─────────────────────────────────────────────────────────────────────────────
 
 The limitations of parsing-dependent pipelines spurred interest in parsing-free approaches. Log2Vec~\cite{meng2020log2vec} proposed representing log messages as graph-structured data and learning embeddings directly from raw text without explicit template extraction. NeuralLog~\cite{neurallog2021} went further by introducing a fully parsing-free framework that encodes raw log messages directly using pre-trained BERT~\cite{devlin2018bert} contextual embeddings, relying on WordPiece tokenization to handle out-of-vocabulary terms naturally. By averaging contextual token embeddings to form fixed-dimensional message representations, NeuralLog demonstrated that pre-trained language models can capture the semantics of raw log text without any parsing intermediary, achieving F1-scores above 0.95 on benchmarks where parsing-based methods plateaued below 0.60.
@@ -167,7 +161,6 @@ The limitations of parsing-dependent pipelines spurred interest in parsing-free 
 Building on transformer architectures~\cite{vaswani2017attention} and BERT-style pre-training, subsequent works have explored increasingly sophisticated attention-based representations. LAnoBERT~\cite{lee2023lanobert} applied masked language modeling objectives to log-specific pre-training, enabling the model to detect anomalies through token-level reconstruction error. LogFormer~\cite{guo2024logformer} proposed a unified transformer framework that jointly captures intra-message token dependencies and inter-message sequential patterns, achieving strong performance across multiple benchmark datasets.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\subsection{LLM-Based and Structurally Aware Approaches}
 % ─────────────────────────────────────────────────────────────────────────────
 
 The recent proliferation of large language models has opened new avenues for log analysis. Several studies have explored LLMs for log parsing tasks, examining their effectiveness~\cite{wu2023effectiveness}, prompt engineering strategies~\cite{le2023prompt}, and dedicated parsing frameworks such as LLMParser~\cite{ma2024llmparser}, LILAC~\cite{jiang2024lilac}, DivLog~\cite{xu2024divlog}, and LogBatcher~\cite{xiao2024logbatcher}. These works collectively demonstrate that LLMs possess sufficient world knowledge to perform competitive log parsing and analysis, though challenges remain around inference cost, latency, and robustness to novel log formats at scale.

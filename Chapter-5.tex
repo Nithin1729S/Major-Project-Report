@@ -41,7 +41,7 @@ For example, in a $(3, 5)$ scheme, the secret is split into 5 shares distributed
 The information-theoretic security guarantee above assumes that shares are analyzed \emph{only} through classical combinatorial means. However, modern deep learning models can sometimes extract partial information by detecting subtle statistical patterns across shares — an assumption that this project explicitly tests and challenges.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Autoencoders}
+\subsection{Autoencoders}
 % ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -55,7 +55,6 @@ An \textbf{autoencoder} is a neural network trained to reproduce its own input a
 \end{minipage}
 \end{figure}
 
-\subsection{Architecture}
 
 An autoencoder consists of five conceptual stages:
 
@@ -67,7 +66,6 @@ An autoencoder consists of five conceptual stages:
     \item \textbf{Output Layer}: Produces the reconstructed input $\hat{x}$.
 \end{enumerate}
 
-\subsection{Training Objective}
 
 Autoencoders are trained in an \textbf{unsupervised} fashion — no labels are required. The training objective is to minimize the \textbf{reconstruction error} between the input $x$ and the output $\hat{x}$, typically measured by the Mean Squared Error (MSE):
 \[
@@ -76,12 +74,12 @@ Autoencoders are trained in an \textbf{unsupervised} fashion — no labels are r
 where $N$ is the number of elements (e.g., pixels). In the context of this project, autoencoders are used to learn mappings from image shares back to the original secret image, thereby assessing whether the information-theoretic security of SIS schemes holds under deep learning attacks.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Image Quality Evaluation Metrics}
+\subsection{Image Quality Evaluation Metrics}
 % ─────────────────────────────────────────────────────────────────────────────
 
 To evaluate how faithfully a reconstructed image matches the original, two standard metrics are used.
 
-\subsection{Peak Signal-to-Noise Ratio (PSNR)}
+\subsubsection{Peak Signal-to-Noise Ratio (PSNR)}
 
 \textbf{PSNR} is derived from the MSE between the original and reconstructed images. It is expressed in decibels (dB) and measures the ratio of the maximum possible signal power to the power of the distortion (noise):
 \[
@@ -89,7 +87,7 @@ To evaluate how faithfully a reconstructed image matches the original, two stand
 \]
 where $\text{peakval}$ is the maximum pixel value (255 for 8-bit images). A \textbf{higher PSNR} means the reconstruction is closer to the original. Typical values above 30 dB are considered good quality, while values below 20 dB indicate significant degradation.
 
-\subsection{Structural Similarity Index Measure (SSIM)}
+\subsubsection{Structural Similarity Index Measure (SSIM)}
 
 MSE and PSNR treat each pixel independently, which does not always align with human visual perception. \textbf{SSIM} addresses this by comparing images along three perceptual dimensions simultaneously: \emph{luminance} (overall brightness), \emph{contrast} (variation in brightness), and \emph{structure} (spatial patterns of pixel intensities). The result is a score in the range $[0, 1]$:
 
