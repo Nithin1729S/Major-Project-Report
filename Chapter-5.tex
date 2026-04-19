@@ -44,7 +44,6 @@ The information-theoretic security guarantee above assumes that shares are analy
 \section{Autoencoders}
 % ─────────────────────────────────────────────────────────────────────────────
 
-\subsection{What is an Autoencoder?}
 
 An \textbf{autoencoder} is a neural network trained to reproduce its own input at the output. At first glance this seems trivial — why train a network to copy an input? The key insight is that the network is forced to pass the information through a \textbf{bottleneck}: a hidden layer with far fewer dimensions than the input. To reconstruct the input faithfully despite this bottleneck, the network is forced to learn a \emph{compact, meaningful representation} of the data.
 

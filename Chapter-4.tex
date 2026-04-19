@@ -98,11 +98,10 @@ The basic problem in SIS is to strike a balance between security, reconstruction
 
 \begin{figure}[H]
 \centering
-\resizebox{\linewidth}{!}{
 \begin{tikzpicture}[
-node distance=0.6cm and 0.6cm,
-block/.style={rectangle, draw, text width=3cm, align=center},
-scale=0.9, transform shape
+node distance=0.4cm and 0.4cm,
+block/.style={rectangle, draw, text width=2.2cm, align=center, font=\small},
+scale=0.8, transform shape
 ]
 
   \node[block] (secret)
@@ -111,13 +110,13 @@ scale=0.9, transform shape
   \node[block, below=of secret] (pool)
     {Average Pooling:\\Generate P and R};
 
-  \node[block, below left=0.6cm and 0.8cm of pool] (xor)
+  \node[block, below left=0.4cm and 0.5cm of pool] (xor)
     {XOR Shadow Generation:\\Create $n$ shadows};
 
-  \node[block, below right=0.6cm and 0.8cm of pool] (permute)
+  \node[block, below right=0.4cm and 0.5cm of pool] (permute)
     {Permute Residuals\\using P as seed};
 
-  \node[block, below=2cm of pool] (dist)
+  \node[block, below=1.4cm of pool] (dist)
     {Distribution of shadows};
 
   \node[block, below=of dist] (recon)
@@ -135,7 +134,6 @@ scale=0.9, transform shape
   \draw[->] (recon) -- (recovered);
 
 \end{tikzpicture}
-}
 \caption{Comprehensive Overview of Proposed Framework}
 \label{fig:methodology}
 \end{figure}
