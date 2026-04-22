@@ -1134,7 +1134,7 @@ Soreng and Kandar~\cite{soreng2023} & yes & meaningless & $(t,n)$ & $n\times n$ 
 \end{table}
  
 % ============================================================
-\section{Conclusion}
+\section{Summary}
 % ============================================================
  
 This project addressed the challenge of reducing the size of shadow images generated in Secret Image Sharing (SIS) schemes without compromising the perfect recovery of the original secret. Beginning with the implementation of the classical polynomial-based SIS method, we systematically explored preprocessing methodologies such as binary representation optimization, digit-based pixel decomposition, and average pooling with residual mapping. Furthermore, the integration of the XOR-based scheme with pooling techniques provided a computationally efficient approach to image sharing. Experimental evaluations using PSNR and SSIM confirmed that the proposed methods not only achieve exact reconstruction but also substantially reduce the storage requirements compared to traditional SIS schemes. The $(t, n)$ Boolean-based MSIS scheme represents a significant advancement, enabling deterministic and lossless recovery of the original images using any $t$ or more consecutive shares. However, the scheme does not achieve reduction in the size of the generated shares, leaving room for optimization in storage efficiency. The autoencoder-based SIS model achieved extremely high compression of shadow images along with near-perfect reconstruction of the secret. Hence, the objective of generating smaller shadow images while maintaining security and lossless recovery was successfully achieved.

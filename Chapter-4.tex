@@ -542,11 +542,11 @@ Bridge & $\infty$ & 1.0000 \\ \hline
 We calculated the Structural Similarity Index (SSIM) among various components to check the security of the residual permutation. Table 3 presents the security analysis of the Cameraman image. The most important points to note are:
 
 \begin{itemize}
-\item The unpermuted residuals are highly similar (SSIM ≈ 0.79-0.85) to the combined image, which may lead to leakage of information.
+\item The unpermuted residuals are highly similar (SSIM $\approx$ 0.79--0.85) to the combined image, which may lead to leakage of information.
 
 \item However, after permutation, the similarity reduces significantly to 0.03, which ensures the removal of structural information.
 
-\item The individual shadow images do not contain any information about the secret, as their similarity (SSIM ≈ 0.01-0.02) to the original and combined images is very low.
+\item The individual shadow images do not contain any information about the secret, as their similarity (SSIM $\approx$ 0.01-0.02) to the original and combined images is very low.
 \end{itemize}
 
 \begin{table}[h!]
@@ -743,6 +743,6 @@ Soreng and Kandar~\cite{soreng2023verifiable} & yes & meaningless & (t, n) & $n 
 }
 \end{table*}
 
-\section{Conclusion}
+\section{Summary}
 
-The proposed SIS method shows a substantial improvement over the existing XOR-based methods by realizing a 75\% reduction in total storage needs without compromising the quality of reconstruction. The experimental results on the test images validate that the reconstructed output preserves the lossless fidelity with PSNR = ∞ and SSIM = 1.0. The addition of the residual permutation mechanism further improves the security by shattering the structural relationships, which is evident from the low SSIM values between the residual and pooled images, thus indicating the negligible information disclosure.
+The proposed SIS method shows a substantial improvement over the existing XOR-based methods by realizing a 75\% reduction in total storage needs without compromising the quality of reconstruction. The experimental results on the test images validate that the reconstructed output preserves the lossless fidelity with PSNR = $= \infty$ and SSIM = 1.0. The addition of the residual permutation mechanism further improves the security by shattering the structural relationships, which is evident from the low SSIM values between the residual and pooled images, thus indicating the negligible information disclosure.
