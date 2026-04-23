@@ -12,20 +12,20 @@ The new technique takes advantage of the fact that the algorithm under considera
 
 More precisely, this attack takes advantage of the channel dependency that was incorporated in the key mixing process; each color channel was generated from the other using the same modular addition operation. Through the study of equality relationships among ciphertexts based on selected inputs, it is possible to reverse-engineer the plaintext pixels without decrypting the chaotic sequences or secret keys.
 
-The attack needs at most 256 queries to an oracle, and the complexity is linear with respect to the number of pixels. Experimental results confirm the success of recovering the original image using the proposed attack. The results prove that the scheme of MMCBIE is not secure against CPA and lacks the inter-pixel/inter-channel dependencies required in chaos-based cryptosystems.
+The attack requires at most 256 queries to an oracle, and its complexity is linear in the number of pixels. Experimental results confirm successful recovery of the original image using the proposed attack. The results show that the MMCBIE scheme is not secure against CPA and lacks the inter-pixel and inter-channel dependencies required in chaos-based cryptosystems.
 
 \section{Preliminaries}
 \label{sec:lad-prelim}
-This section introduces the foundational concepts and theoretical background required to understand the log-based anomaly detection methodology developed in this work. Each concept is explained from first principles before the formal mathematical notation is presented. The three main areas covered are: log representation and anomaly formulation, token embedding and representation learning, and the self-attention mechanism.
+This section introduces the core concepts required for the cryptanalysis of the MMCBIE scheme. It covers the chaotic maps used in the design, their role in permutation-diffusion encryption, and the structural properties that are exploited in a chosen-plaintext attack.
 
 \subsection{Chaotic Maps}
 
-MMCBIE is based on two types of chaotic maps.
-H\'enon chaotic map is used for the first transformation phase 
-through confusing the pixel values using pixel-wise XOR process.
-The last diffusion stage uses the Two-Dimensional Logistic Chaotic
-Map (2D-LSCM) using the same XOR process. 
-Key-mixing step is placed between the two phases deterministically.
+MMCBIE is based on two chaotic maps.
+The H\'enon map is used in the first transformation phase
+to modify pixel values through a pixel-wise XOR process.
+The final diffusion stage uses the Two-Dimensional Logistic Chaotic
+Map (2D-LSCM), again through XOR operations.
+A deterministic key-mixing step is inserted between these two phases.
 
 \subsection{H\'enon Chaotic Map}
 

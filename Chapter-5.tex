@@ -390,37 +390,15 @@ be considered a security threat.
 % ---
 \subsubsection{Case (d): Three Shares Missing}
 
-Table~\ref{tab:xor_miss3} reports reconstruction quality when only one of the
-four XOR shares is available (three shares missing). The visual output for the
-digit ``7'' is shown in Fig.~\ref{fig:all_results}(d).
-
-\begin{table}[htbp]
-\centering
-\caption{Reconstruction Quality with Three XOR Shares Missing (Only One Share Available).}
-\label{tab:xor_miss3}
-\begin{tabular}{|c|c|c|}
-\hline
-\textbf{Image (Digit)} & \textbf{SSIM} & \textbf{PSNR (dB)} \\
-\hline
-Image 1   & 0.7396 & 11.84 \\
-Image 2   & 0.6422 &  9.56 \\
-Image 3   & 0.8428 & 14.81 \\
-Image 4   & 0.6106 &  8.17 \\
-Image 5   & 0.7120 & 11.76 \\
-\hline
-\textbf{Average} & $\mathbf{\approx 0.7094}$ & $\mathbf{\approx 11.23}$ \\
-\hline
-\end{tabular}
-\end{table}
+When only one of the four XOR shares is available (three shares missing), reconstruction quality remains poor. The visual output for the digit ``7'' is shown in Fig.~\ref{fig:all_results}(d).
 
 The figures computed using three missing shares match those calculated using two
 missing shares. This is due to the symmetry inherent in the XOR design where
-the available shares contain equivalent amounts of partial information regarding
-the secret and utilize the same data set prior knowledge for decoding. The low
-SSIM scores have no impact on the reliability of the images produced since
-these values are within expectations from the information-theoretic security
-bounds of the XOR protocol and other works involving
-neural network decoding with missing input data.
+the available shares contain equivalent amounts of partial information about
+the secret and use the same dataset prior knowledge for decoding. The low
+SSIM scores are consistent with the information-theoretic security
+bounds of the XOR protocol and prior work on neural network decoding with
+missing inputs.
 
 % ===========================
 \subsection{Configuration 2: Decoding with Three Consecutive XOR Shares}
