@@ -166,46 +166,7 @@ Let $x = 1, 2, \ldots, n$, then compute $f(x)$ for each $x$. Here, $f(x)$ repres
 These coefficients $p_0, p_1, \ldots, p_{k-1}$ correspond to the values of pixels within a block of the reconstructed image. Once all pixels across the shares are processed, the recovered image $S$ is obtained.
  
 The adjacent pixels of an image typically exhibit a high correlation. Therefore, the secret image $S$ must be transformed before applying polynomial sharing to avoid inadvertent disclosure of sensitive information.
- 
-\subsection{Evaluation Metrics}
- 
-In order to evaluate the performance of the proposed secret image sharing schemes and reconstruction methods, two commonly used image quality assessment metrics are employed: Peak Signal-to-Noise Ratio (PSNR) and Structural Similarity Index Measure (SSIM). These metrics measure the similarity between the original secret image and the reconstructed image, providing quantitative insights into the visual quality and accuracy of reconstruction.
- 
-\subsubsection{Peak Signal-to-Noise Ratio (PSNR)}
- 
-Peak Signal-to-Noise Ratio (PSNR) is used to calculate the ratio between the maximum possible signal power and the power of noise that distorts the quality of the reconstructed image. It is widely used to assess the quality of reconstruction in lossy image compression and transmission systems. In this context, the original image is considered as the signal, while the difference between the original and reconstructed images represents the noise.
- 
-PSNR is expressed in decibels (dB) because of the wide dynamic range of signals. For 8-bit image data, PSNR values typically range between 30 and 50 dB, while in wireless transmission applications, a PSNR between 20 and 25 dB is considered an acceptable quality threshold.
- 
-The PSNR is mathematically defined as:
-\begin{equation}
-    \mathrm{PSNR} = 10 \cdot \log_{10} \left( \frac{\mathrm{peakval}^2}{\mathrm{MSE}} \right)
-\end{equation}
-Here:
-\begin{itemize}
-    \item $\mathrm{peakval}$ represents the maximum possible pixel value in the image. For an 8-bit grayscale image, $\mathrm{peakval} = 255$.
-    \item MSE (Mean Squared Error) measures the average squared difference between the original and reconstructed image pixels.
-\end{itemize}
- 
-A higher PSNR value indicates better reconstruction quality, with fewer errors introduced during the sharing and recovery processes.
- 
-\subsubsection{Structural Similarity Index Measure (SSIM)}
- 
-The Structural Similarity Index Measure (SSIM) is a perception-based metric designed to model the human visual system. Unlike PSNR, which only measures pixel-wise differences, SSIM considers changes in structural information, luminance, and contrast between the original and reconstructed images. Structural information refers to the relationships among neighboring pixels, which are crucial for capturing the visual characteristics of an image. SSIM assumes that human vision is more sensitive to structural changes rather than absolute pixel differences.
- 
-The SSIM between two images $x$ and $y$ is calculated based on three components:
-\begin{itemize}
-    \item \textbf{Luminance comparison} -- measures the similarity in brightness.
-    \item \textbf{Contrast comparison} -- evaluates the difference in contrast.
-    \item \textbf{Structural comparison} -- captures the correlation between the structures of the two images.
-\end{itemize}
- 
-The SSIM value ranges from 0 to 1, where:
-\begin{itemize}
-    \item 1 indicates perfect similarity between the images.
-    \item Values closer to 0 indicate greater dissimilarity.
-\end{itemize}
- 
+
 % ============================================================
 \section{Literature Review}
 % ============================================================
@@ -301,7 +262,7 @@ The preprocessing consists of the following steps:
  
 Consider a simple $5 \times 5$ block of the original image:
  
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \begin{tabular}{cccc}
 \toprule
@@ -368,7 +329,7 @@ The preprocessing pipeline works as follows:
  
 \textbf{Illustration of Digit Splitting}
  
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \begin{tabular}{cccc}
 \toprule
@@ -391,175 +352,7 @@ In the original scheme, the grayscale image directly undergoes the difference im
     \item \textbf{No Information Loss:} Metadata ensures perfect reconstruction of the original pixel values.
     \item \textbf{Efficient Encoding:} Most digits are small (0--9), which are highly efficient for binary encoding.
 \end{itemize}
- 
-\subsubsection{Average Pooling}
- 
-The final technique we explored to reduce the shadow image size involves applying average pooling to the secret image as a preprocessing step. Unlike the earlier techniques that focused on bitstream-level compression, this method directly reduces the spatial dimensions of the image, resulting in a smaller matrix that serves as the input to Wang and Su's sharing algorithm.
- 
-\textbf{Motivation}
- 
-In Wang and Su's original method, the entire image is directly processed, resulting in a set of shadow images proportional to the original image size. Many images contain neighboring pixels with similar intensity values, especially in smooth regions, leading to redundancy. By grouping nearby pixels and replacing them with their average value, we can:
-\begin{itemize}
-    \item Reduce the size of the matrix used in the sharing phase.
-    \item Significantly decrease the size of each shadow image.
-    \item Maintain perfect reconstruction by storing residual information.
-\end{itemize}
- 
-\textbf{Proposed Approach}
- 
-The methodology consists of two key processes: pooling (preprocessing) and unpooling (reconstruction).
- 
-\textbf{1. Average Pooling (Preprocessing)} The secret image is divided into non-overlapping blocks of size $k \times k$ (here $2 \times 2$). For each block:
-\begin{enumerate}
-    \item Compute the average pixel value of the block and store it in the pooled matrix:
-    \[
-        P_{\text{avg}} = \frac{\sum_{i=1}^{k} \sum_{j=1}^{k} P_{ij}}{k^2}
-    \]
-    \item Calculate residuals for each pixel as:
-    \[
-        R_{ij} = P_{ij} - P_{\text{avg}}
-    \]
-    \item Store the residuals in a residual matrix of the same size as the original image.
-\end{enumerate}
- 
-Outputs of this step:
-\begin{itemize}
-    \item \textbf{Pooled Matrix:} Reduced dimensions (e.g., $512 \times 512$ image becomes $256 \times 256$ for $2 \times 2$ pooling).
-    \item \textbf{Residual Map:} Stores fine details for perfect reconstruction.
-\end{itemize}
- 
-\textbf{2. Sharing Phase on Pooled Matrix} The pooled matrix, being much smaller, is used as the input in the sharing phase.
- 
-\textbf{3. Reveal Phase and Average Unpooling} During reconstruction:
-\begin{enumerate}
-    \item Shadow images were combined to reconstruct the pooled matrix using Wang and Su's reveal phase.
-    \item The pooled matrix is upsampled back to the original dimensions by repeating each value throughout its block.
-    \item The residual map is then added to restore the exact original pixel values:
-    \[
-        P_{ij} = \hat{P}_{\text{avg}} + R_{ij}
-    \]
-\end{enumerate}
- 
-\textbf{Illustration}
- 
-\begin{table}[H]
-\centering
-\begin{tabular}{ccc}
-\toprule
-\textbf{Original Block ($2 \times 2$)} & \textbf{Average Value} & \textbf{Residual Map} \\
-\midrule
-$4, 6, 5, 7$ & $5$ & $-1, +1, 0, +2$ \\
-\bottomrule
-\end{tabular}
-\end{table}
- 
-\textbf{Integration with Wang and Su's Method}
-\begin{enumerate}
-    \item Apply average pooling to secret image to generate pooled matrix and residual map.
-    \item Perform the sharing phase on the pooled matrix.
-    \item Reveal the pooled matrix using shadow images.
-    \item Use residual map in unpooling step to perfectly reconstruct the original secret image.
-\end{enumerate}
- 
-\textbf{Impact}
-\begin{itemize}
-    \item \textbf{Reduced Shadow Image Size:} Smaller pooled matrix directly leads to smaller shadow images.
-    \item \textbf{Perfect Reconstruction:} The residual map guarantees lossless recovery of the original image.
-    \item \textbf{Scope for improvement:} Residual map storage is required, but it can be compressed or made public without revealing the full secret.
-\end{itemize}
- 
-\subsection{XOR-Based Secret Image Sharing Schemes}
- 
-Boolean based SIS schemes have emerged as one of the most computationally efficient and conceptually simple techniques for secure image distribution. In this work, we examine two key XOR-based SIS frameworks: the first is the Wang et al. scheme, which we adapt and integrate into our system to operate on pooled and permuted residual images for enhanced efficiency and security; and the second is the Kabirirad--Eslami $(t, n)$-Multi Secret Image Sharing Scheme, which allows for conditional XOR-based threshold scheme.
- 
-\subsubsection{Pooling Optimized XOR-based SIS Scheme}
- 
-After implementing Wang and Su's polynomial-based sharing method, we also explored an XOR-based secret image sharing (SIS) approach, specifically the Wang-Zhang-Ma-Li scheme. Unlike polynomial-based methods, this scheme relies solely on XOR operations for both construction and reconstruction. In our workflow, this XOR-based scheme was applied directly to the pooled image generated during the average pooling preprocessing step, further reducing the size of the shadow images. An intermediate permutation step was also performed on the residual image to prevent it from revealing any details about the secret image. Figure~\ref{fig:methodology_overview} illustrates the flow of the method followed in this scheme.
- 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.6\textwidth]{images/methodology_overview.png}
-    \caption{Methodology Overview}
-    \label{fig:methodology_overview}
-\end{figure}
- 
-\textbf{Proposed Method}
- 
-\textbf{1. Average Pooling (Preprocessing):} The pipeline begins with applying average pooling on the $512 \times 512$ original image and is reduced to $256 \times 256$ pooled image. The information lost during pooling is stored in the residual matrix to allow for lossless recovery in the reveal phase.
- 
-\textbf{2. Permutation on the Residual Image:} The downsampled image is used as a seed to generate a permutation matrix of size $256 \times 256$, which serves as a key to permute the residuals. Since the downsampled image itself can only be reconstructed after combining all $n$ shares, the permutation key remains protected throughout the process, thereby ensuring that the residuals remain obfuscated and the original image cannot be interpreted without access to all shares.
- 
-\textbf{3. Construction Phase:} Let the pooled image be $I_s$. The goal is to generate $n$ share images so that combining all shares perfectly reconstructs the original pooled image.
- 
-\begin{enumerate}
-    \item The dealer $D$ generates $n - 1$ random matrices:
-    \[
-        \{B_1, B_2, \ldots, B_{n-1}\}
-    \]
-    where each matrix is of size $256 \times 256$ and contains random values in the range $[0, 255]$.
-    \item The $n$ share images $\{SI_1, SI_2, \ldots, SI_n\}$ are created sequentially using XOR operations:
-    \begin{align*}
-        SI_1 &= B_1 \\
-        SI_2 &= B_1 \oplus B_2 \\
-        SI_3 &= B_2 \oplus B_3 \\
-        &\vdots \\
-        SI_{n-1} &= B_{n-2} \oplus B_{n-1} \\
-        SI_n &= B_{n-1} \oplus I_s
-    \end{align*}
-    Here, $\oplus$ represents the bitwise XOR operation. Each share image has the same dimensions as the pooled image $I_s$.
-\end{enumerate}
- 
-\textbf{3. Recovery Phase:} To reveal the pooled image, the combiner performs a bitwise XOR of all $n$ share images:
-\[
-    I'_s = SI_1 \oplus SI_2 \oplus \cdots \oplus SI_n
-\]
-The result $I'_s$ is identical to the original pooled matrix. Once $I'_s$ is obtained, the average unpooling process is applied using the residual image generated during the preprocessing step, resulting in perfect reconstruction of the original secret image.
- 
-\subsubsection{$(t, n)$ XOR-based SIS Scheme}
- 
-We implemented the approach proposed in the paper ``A $(t, n)$-Multi Secret Image Sharing Scheme Based on Boolean Operations'' by Kabirirad and Eslami~\cite{kabirirad2018}. The scheme is designed to share multiple secret images $\{G_1, G_2, \ldots, G_t\}$ among $n$ participants $\{P_1, P_2, \ldots, P_n\}$, such that any $t$ consecutive shares are sufficient to reconstruct the original secret images, while any fewer shares reveal no meaningful information.
- 
-We reproduced and implemented the key stages of the proposed system, as follows:
- 
-\textbf{Image Sharing Phase}
- 
-In this phase, the dealer takes the $t$ secret images of identical size $(R \times C)$ as input and generates $n$ corresponding shares $\{S_1, S_2, \ldots, S_n\}$. A pseudo-random image is derived in each iteration using a function $f$ defined as a composition of Boolean operations, a cryptographic hash function $H$, and a pseudo-random function (PRF). The function $f$ ensures randomization and security of shares, and is formally defined as:
-\[
-f(G_{i+1}, \ldots, G_{i+t-1};\, \mathrm{param}) =
-\begin{cases}
-    \mathrm{PRF}\!\left(G_{i+1} \oplus \cdots \oplus G_{i+t-1},\, H(G_{i+1}, \ldots, G_{i+t-1})\right) & \text{if } i = t, \\
-    \bigoplus_{j=1}^{t-1} f_1(G_{i+j},\, l_{ij}) & \text{otherwise,}
-\end{cases}
-\]
-where
-\[
-    f_1(G_{i+j}, l_{ij}) = \mathrm{Rev}(\mathrm{Shift}(G_{i+j}, -l_{ij})) \oplus \mathrm{Shift}(G_{i+j}, l_{ij}) \oplus G_{i+j}.
-\]
-Here, $\mathrm{Shift}(X, i)$ denotes a circular shift of the image $X$ by $i$ pixels, and $\mathrm{Rev}(X)$ represents bit-reversal of all pixel values in $X$. The parameters $l_{ij}$ are random integers controlling the degree of shift.
- 
-The share generation process follows:
-\begin{align*}
-    N_i &= f(G_{i+1}, G_{i+2}, \ldots, G_{i+t-1};\, \mathrm{param}), \\
-    G_{i+t} &= G_i \oplus N_i.
-\end{align*}
-After $n + t$ iterations, the last $n$ generated images $\{G_{2t+1}, G_{2t+2}, \ldots, G_{2t+n}\}$ are distributed as shares $\{S_1, S_2, \ldots, S_n\}$ among the participants.
- 
-\textbf{Image Recovery Phase}
- 
-Reconstruction of the secret images requires at least $t$ consecutive shares from participants. Suppose that participants $\{P_r, P_{r+1}, \ldots, P_{r+t-1}\}$ provide their shares $\{S_r, S_{r+1}, \ldots, S_{r+t-1}\}$. The original secret images can be recovered iteratively using the reverse transformation:
-\begin{align*}
-    N_i &= f(G_{i+1}, G_{i+2}, \ldots, G_{i+t-1};\, \mathrm{param}), \\
-    G_i &= G_{i+t} \oplus N_i.
-\end{align*}
-This recursive process is repeated until all $t$ secret images are fully reconstructed. The use of Boolean XOR ensures that reconstruction is lossless and computationally efficient.
- 
-\textbf{Outcome}
-\begin{itemize}
-    \item The scheme successfully supports general $(t, n)$ threshold configurations, extending beyond existing Boolean-based methods that were limited to $(2, n)$ or $(n, n)$ structures.
-    \item The reconstruction of secret images is completely lossless, and the scheme satisfies perfect secrecy, that is, no information can be inferred from fewer than $t$ shares.
-    \item The shares are of equal size to the secret images, and the scheme does not inherently reduce share size, leaving room for subsequent compression.
-\end{itemize}
- 
+
 % ============================================================
 \section{Results and Analysis}
 % ============================================================
@@ -572,7 +365,7 @@ Since the reconstruction process in all polynomial and XOR-based experiments was
  
 The results of autoencoders-based SIS include focus on the shares size reduction and the reconstruction quality using SSIM and PSNR measures, as it is not a perfectly lossless scheme.
  
-\begin{figure}[H]
+\begin{figure}[t]
     \centering
     \begin{subfigure}[b]{0.3\textwidth}
         \centering
@@ -649,7 +442,7 @@ Bridge  & 156 & 72195  & 288780 \\
  
 Figure~\ref{fig:basepaper_pipeline} illustrates the results of the baseline SIS scheme on the Milk image, showing the original image, the difference image that highlights the loss in correlation between pixels, and the four generated shadow images produced during the secret image sharing process.
  
-\begin{figure}[H]
+\begin{figure}[t]
     \centering
     \begin{subfigure}[b]{0.3\textwidth}
         \centering
@@ -730,7 +523,7 @@ Bridge  & 216205 & 113670 & 454682 \\
  
 Figure~\ref{fig:rlz_pipeline} illustrates the results of the baseline SIS scheme improved by the RLZ technique on the Jet image, showing the original image, the preprocessed image, the difference image, and the four generated shadow images produced during the secret image sharing process.
  
-\begin{figure}[H]
+\begin{figure}[t]
     \centering
     \begin{subfigure}[b]{0.3\textwidth}
         \centering
@@ -780,7 +573,7 @@ Figure~\ref{fig:rlz_pipeline} illustrates the results of the baseline SIS scheme
     \label{fig:rlz_pipeline}
 \end{figure}
  
-\textbf{Conclusion:} The Removal of Leading Zeros from binary representation technique failed in achieving the objective of reducing the size of shadow images.
+The Removal of Leading Zeros from binary representation technique failed in achieving the objective of reducing the size of shadow images.
  
 \subsubsection{Digit Decomposition of Pixel Values (DDP Technique)}
  
@@ -818,7 +611,7 @@ Bridge  & 217144 & 93411  & 372847 \\
  
 Figure~\ref{fig:ddp_pipeline} illustrates the results of the baseline SIS scheme improved by the DDP technique on the Lena image showing the original image, the preprocessed image, the difference image, and the four generated shadow images produced during the secret image.
  
-\begin{figure}[H]
+\begin{figure}[t]
     \centering
     \begin{subfigure}[b]{0.3\textwidth}
         \centering
@@ -868,270 +661,7 @@ Figure~\ref{fig:ddp_pipeline} illustrates the results of the baseline SIS scheme
     \label{fig:ddp_pipeline}
 \end{figure}
  
-\textbf{Conclusion:} The Digit Decomposition of Pixels technique also failed to achieve the objective of reducing the size of the shadow images compared to the baseline approach.
- 
-\subsubsection{Average Pooling Technique}
- 
-In this section, we evaluate the results of the \textit{Average Pooling optimization technique} in which we applied $2 \times 2$ average pooling on the original image as the preprocessing step. The lost information is saved as \textit{residual image} to enable recovery. The SIS scheme is performed on the pooled image such that the same image is reconstructed as the output. With the help of the residual image, unpooling operation is done to reconstruct the required secret image. Table~\ref{tab:avgpool} shows the results of this approach, listing the number of Huffman codes, sizes of the processed image, and the shadow images.
- 
-\begin{table}[H]
-\centering
-\small
-\setlength{\tabcolsep}{4pt}
-\caption{Experimental results for all test images using the polynomial-based SIS scheme improvised using Average Pooling technique}
-\label{tab:avgpool}
-\begin{tabular}{lccc}
-\toprule
-Image & Huffman Entries & Shadow Size (B) & Combined Size (B) \\
-\midrule
-Jet     & 245 & 20107 & 80394  \\
-Lena    & 257 & 22144 & 88620  \\
-Milk    & 220 & 17903 & 71654  \\
-Baboon  & 235 & 26133 & 104558 \\
-Barbara & 219 & 24708 & 98669  \\
-Bridge  & 139 & 18588 & 74317  \\
-\bottomrule
-\end{tabular}
-\end{table}
- 
-\textbf{Observations:}
-\begin{itemize}
-    \item \textbf{Preprocessed Image Size:} $2 \times 2$ pooling operation reduces the original image size four times, without making any changes in the structural properties. As a result, all $512 \times 512$ images were reduced to $256 \times 256$, that is, of the size 64 KB, the smallest compared to the baseline technique and other optimization techniques.
-    \item \textbf{Residual Image:} The residual image is of the same size as the original image, that is, 256 KB. Although it contains residual information, i.e. $R_{ij} = P_{ij} - P_{\text{avg}}$, it still retains the structural properties of the original image. Hence, it reveals some information about the secret image, and fails to maintain security.
-    \item \textbf{Variation in Huffman Table Entries:} Since the pooled images are very similar to the original image, the number of Huffman codes also closely matched with that of the baseline technique. Images with higher texture complexity, such as Lena and Baboon, required more Huffman table entries because of increased pixel variation, whereas simpler images like Bridge and Milk had fewer entries.
-    \item \textbf{Shadow Image Size Trend:} The shadow images generated in this technique were the smallest compared to all the previous techniques discussed. The sizes ranged from 17.49 KB (Milk) to 25.53 KB (Baboon), roughly four times smaller than the baseline approach. This drastic reduction in size attributes to the smaller pooled images, thus highlighting the efficiency of reduction in spatial dimensions.
-\end{itemize}
- 
-Figure~\ref{fig:avgpool_pipeline} illustrates the results of the baseline SIS scheme improved by the Average Pooling technique on the Baboon image showing the original image, the residual image, the difference image, and the four generated shadow images produced during the secret image.
- 
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}[b]{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/baboon.jpeg}
-        \caption*{Original}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/paper-pooling/baboon-residuals.png}
-        \caption*{Residuals}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/paper-pooling/baboon-diff.png}
-        \caption*{Difference}
-    \end{subfigure}
- 
-    \vspace{0.3cm}
- 
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/paper-pooling/baboon-shadow1.png}
-        \caption*{Shadow 1}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/paper-pooling/baboon-shadow2.png}
-        \caption*{Shadow 2}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/paper-pooling/baboon-shadow3.png}
-        \caption*{Shadow 3}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/paper-pooling/baboon-shadow4.png}
-        \caption*{Shadow 4}
-    \end{subfigure}
- 
-    \caption{Average Pooling technique pipeline}
-    \label{fig:avgpool_pipeline}
-\end{figure}
- 
-\textbf{Conclusion:} The \textit{Average Pooling optimization technique} satisfies the objective of reducing the size of the shadow images. However, the residuals image reveals some information about the secret image, and thus fails to maintain the objective of secrecy.
- 
-\subsection{Performance Evaluation of XOR-based SIS}
- 
-This section deals with the experimental results of the XOR-based $(n, n)$ SIS scheme optimized with the average pooling technique and Kabirirad's XOR-based $(t, n)$ SIS scheme implemented as part of the work done in this paper.
- 
-\subsubsection{$(n, n)$ XOR Scheme Optimized with Average Pooling}
- 
-The results of the XOR-based $(4, 4)$ SIS scheme optimized with the average pooling technique are discussed in this section. Since the residual image could reveal information about the secret, a permutation process was performed on the residual image to destroy the correlation between pixels and ensure secrecy. Table~\ref{tab:xor_pooling} presents the improvements achieved by the Pooling-Permutation technique in storage compared to the naive XOR-based SIS $(n, n)$ scheme.
- 
-\begin{table}[H]
-\centering
-\caption{Storage Analysis of Secure Pooling Method}
-\label{tab:xor_pooling}
-\begin{tabular}{lc}
-\toprule
-\multicolumn{2}{c}{\textbf{Basic Sizes (bytes)}} \\
-\midrule
-Original Image Size       & 262,144 \\
-Permuted Residuals Size   & 262,144 \\
-Individual Share Size     & 65,536  \\
-\midrule
-\multicolumn{2}{c}{\textbf{Storage Efficiency}} \\
-\midrule
-Naive Secret Sharing      & 1,310,720 bytes \\
-Our Secure Pooling Method & 262,144 bytes \\
-Storage Reduction         & 75.00\% \\
-\bottomrule
-\end{tabular}
-\end{table}
- 
-\textbf{Observations}
-\begin{itemize}
-    \item \textbf{Preprocessed Image Size:} $2 \times 2$ pooling operation reduces the original image size four times, without making any changes in the structural properties. As a result, all $512 \times 512$ images were reduced to $256 \times 256$, that is, of the size 64 KB, the smallest dimensions discussed in this paper.
-    \item \textbf{Permutation on the Residual Image:} The residual image is the same size as the original image, that is, 256 KB. The residual image, revealed some information about the secret image as it had an SSIM score of 0.85 with the pooled image, which represents a high similarity measure. Hence, the downsampled image was used as a seed for permutation, so that the permutation cannot be reversed without all the share images. This improved the SSIM score to 0.03, which represents a low similarity measure, hence can be made \textbf{publicly} available.
-    \item \textbf{Storage Efficiency:} The total storage space was determined by four shadows, since the permuted residual image is made public. The naive XOR-based SIS scheme consumed 1,310,720 bytes (1280 KB) whereas our optimized approach consumed 262,144 bytes (512 KB), resulting in a reduction of 75\% on the storage space.
-\end{itemize}
- 
-Figure~\ref{fig:xor_pooling_pipeline} illustrates the original image, residual image, permuted image and the four shadow image results of the Pooling-permutation optimized XOR-based SIS pipeline.
- 
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}[b]{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/lena.jpeg}
-        \caption*{Original}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/xor-pooling/lena-xor-residual.png}
-        \caption*{Residuals}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.3\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/xor-pooling/lena-xor-permuted-residuals.png}
-        \caption*{Permuted Residual}
-    \end{subfigure}
- 
-    \vspace{0.3cm}
- 
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/xor-pooling/lena-xor-share1.png}
-        \caption*{Shadow 1}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/xor-pooling/lena-xor-share2.png}
-        \caption*{Shadow 2}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/xor-pooling/lena-xor-share3.png}
-        \caption*{Shadow 3}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/xor-pooling/lena-xor-share4.png}
-        \caption*{Shadow 4}
-    \end{subfigure}
- 
-    \caption{Pooling-Permutation optimized XOR-based SIS pipeline}
-    \label{fig:xor_pooling_pipeline}
-\end{figure}
- 
-\subsubsection{$(t, n)$ XOR-based SIS Scheme}
- 
-The results of the \textbf{Boolean $(2, 4)$ XOR-based SIS} scheme are presented in this section. The scheme allows the reconstruction of the secret image from any 2 consecutive shares out of the total 4 generated shares, providing flexibility compared to traditional $(n, n)$ schemes. It should be noted that the original paper had proposed the scheme for multiple images, but we have implemented the scheme for the case of a single secret image.
- 
-\begin{figure}[H]
-    \centering
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/barbara.jpeg}
-        \caption*{Original}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/t_n-xor/reconstructed_1_2_OK.png}
-        \caption*{Revealed(1-2)}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/t_n-xor/reconstructed_2_3_OK.png}
-        \caption*{Revealed(2-3)}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/t_n-xor/reconstructed_3_4_OK.png}
-        \caption*{Revealed(3-4)}
-    \end{subfigure}
- 
-    \vspace{0.3cm}
- 
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/t_n-xor/barbara-share1.png}
-        \caption*{Shadow 1}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/t_n-xor/barbara-share2.png}
-        \caption*{Shadow 2}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/t_n-xor/barbara-share3.png}
-        \caption*{Shadow 3}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.22\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{images/t_n-xor/barbara-share4.png}
-        \caption*{Shadow 4}
-    \end{subfigure}
- 
-    \caption{$(t, n)$ XOR-based SIS pipeline}
-    \label{fig:tn_pipeline}
-\end{figure}
- 
-Figure~\ref{fig:tn_pipeline} illustrates the original image, the reconstructed images using shadows (1-2, 2-3, 3-4) and the shadow images. It illustrates the reconstructed secret images obtained from all possible consecutive pairs (1-2, 2-3, 3-4) of shadow images in the $(2, 4)$ Boolean XOR-based SIS scheme.
- 
-To evaluate the performance of the proposed pooling-based XOR secret image sharing scheme, we compare it with several existing XOR-based approaches reported in the literature. The comparative analysis, summarized in Table~\ref{tab:comparison}, highlights the differences in storage efficiency, reconstruction quality, and computational complexity.
- 
-\begin{table}[H]
-\centering
-\small
-\setlength{\tabcolsep}{3pt}
-\caption{Comparison between a few XOR-based SIS schemes}
-\label{tab:comparison}
-\begin{tabular}{lcccc}
-\toprule
-Schemes & Lossless & Share type & Access & Share size \\
-\midrule
-Wang et al.~\cite{wang2007}      & yes & meaningless & $(n,n)$ & $n\times n$ \\
-Chen--Wu~\cite{chen2011}         & yes & meaningless & $(n,n)$ & $n\times n$ \\
-Lin et al.~\cite{lin2024}        & yes & meaningless & $(n,n)$ & $n\times n$ \\
-Guo et al.~\cite{guo2016}        & yes & meaningless & $(t,n)$ & $n\times n$ \\
-Prasetyo--Hsia~\cite{prasetyo2019b} & cond. & meaningless & $(n,n)$ prog. & $n\times n$ \\
-Chattopadhyay et al.~\cite{chattopadhyay2018} & yes & meaningless & $(n,n)$ & $n\times n$ \\
-Faraoun~\cite{faraoun2020}       & yes & meaningless & $(n,n)$ & $n\times n$ \\
-Chattopadhyay et al.~\cite{chattopadhyay2022} & yes & meaningless & $(t,n)$ & $n\times n$ \\
-Kabirirad--Eslami~\cite{kabirirad2019} & yes & meaningless & $(t,n)$ & $n\times n$ \\
-Soreng and Kandar~\cite{soreng2023} & yes & meaningless & $(t,n)$ & $n\times n$ \\
-\textbf{Proposed}                & yes & meaningless & $(n,n)$ & $\frac{n}{4}\times\frac{n}{4}$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+The Digit Decomposition of Pixels technique also failed to achieve the objective of reducing the size of the shadow images compared to the baseline approach.
  
 % ============================================================
 \section{Summary}
