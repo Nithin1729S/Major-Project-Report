@@ -5,6 +5,8 @@
 
 \chapter{Cryptanalysis of a Medical Image Encryption Scheme Using Multiple Chaotic Maps}
 
+This chapter presents a cryptanalysis of a chaos-based medical image encryption scheme that combines Arnold's Cat Map and a two-dimensional logistic sine coupling map, demonstrating its vulnerability under a chosen-plaintext attack model. It explains how structural weaknesses, specifically plaintext-independent keystream generation and the separability of permutation and diffusion stages, enable complete recovery of both the keystream and permutation mapping, allowing exact decryption without knowledge of the secret key, and concludes with theoretical and experimental validation highlighting the gap between statistical performance and actual cryptographic security.
+
 % ------------------------------------------------------------
 \section{Introduction}
 % ------------------------------------------------------------
@@ -49,7 +51,6 @@ A typical chaos-based image encryption scheme follows a two-phase structure:
 
 Together, permutation provides \emph{confusion} and diffusion provides \emph{spreading}, corresponding directly to Shannon's classical principles of secure cipher design.
 
-\subsubsection{Arnold's Cat Map}
 
 \textbf{Arnold's Cat Map} is a classical area-preserving chaotic map widely used for pixel permutation in image encryption. For an image of size $n \times n$, it maps each pixel at position $(x,\, y)$ to a new position $(x',\, y')$ according to:
 \[
@@ -61,7 +62,6 @@ Together, permutation provides \emph{confusion} and diffusion provides \emph{spr
 \]
 Each application of this map shuffles pixel positions in a deterministic yet seemingly random manner. Importantly, the map is \textit{periodic}: after a finite number of iterations, the image returns to its original configuration. This periodicity property is exploited both in the encryption process and in certain cryptanalytic attacks.
 
-\subsubsection{Two-Dimensional Logistic Sine Coupling Map (2D-LSCM)}
 
 The \textbf{Two-Dimensional Logistic Sine Coupling Map (2D-LSCM)} is a higher-dimensional chaotic system designed to overcome the limited chaotic range and non-uniform distribution of simple one-dimensional maps. It generates two mutually coupled chaotic sequences $\{x_i\}$ and $\{y_i\}$ via the following recurrence relations:
 \[
@@ -78,7 +78,6 @@ where $\theta \in (0, 1)$ is a coupling parameter that governs the balance betwe
 
 \textbf{Cryptanalysis} is the science of analysing encryption schemes to identify weaknesses that allow an adversary to recover plaintext or the secret key without legitimate authorisation. In the context of image encryption, successful cryptanalysis corresponds to recovering the original image from its encrypted form.
 
-\subsubsection{Attack Models}
 
 Different attack models assume varying levels of adversary capability. This work focuses primarily on the most powerful standard model used in symmetric cryptography.
 
@@ -139,7 +138,6 @@ This work presents a complete cryptanalysis of the chaos-based medical image enc
 
 Two distinct chaotic maps form the algorithmic backbone of the scheme. Arnold's Cat Map handles pixel-position shuffling during the permutation phase, while the 2D-LSCM drives keystream generation for the diffusion phase.
 
-\subsubsection{Two-Dimensional Logistic-Sine-Coupling Map (2D-LSCM)}
 
 The 2D-LSCM is constructed by coupling the one-dimensional logistic map with the one-dimensional sine map. The logistic map is given by
 \begin{equation}
@@ -158,7 +156,6 @@ y_{i+1} = \sin\!\Bigl(\pi\bigl(4\theta\, y_i(1-y_i) + (1-\theta)\sin(\pi x_{i+1}
 \end{equation}
 where $\theta \in [0,1]$ is the coupling control parameter. By operating in a substantially higher-dimensional phase space than either constituent map, the 2D-LSCM achieves greater ergodicity and a wider chaotic parameter range.
 
-\subsubsection{Arnold's Cat Map}
 
 Arnold's Cat Map is a classical area-preserving automorphism of the torus that, when applied to a square image, performs a deterministic reordering of pixel coordinates. For an image of size $n \times n$, the transformation is
 \begin{equation}
@@ -202,7 +199,7 @@ where $F = 255$ for 8-bit imagery and $X_i = \lfloor x_i \times 2^{32} \rfloor$ 
 % -----------------------------------------------------------------------
 \subsection{Chosen-Plaintext Attack Framework}
 
-\begin{figure}[H]
+\begin{figure}[t]
 \centering
 \begin{tikzpicture}[
     block/.style={draw, rectangle, rounded corners=3pt, minimum width=3.2cm,
@@ -243,7 +240,7 @@ The attack proceeds through three phases:
 
 The data complexity is $n + 1$ oracle queries for an $n \times n$ image, and the total computational cost is $\mathcal{O}(n^3)$, dominated by the Arnold map applications in Phase 2.
 
-\begin{algorithm}[H]
+\begin{algorithm}[t]
 \LinesNumbered
 \caption{Chosen-Plaintext Attack on the Target Scheme}
 \label{alg:cpa}
@@ -452,7 +449,7 @@ The attack is conducted in three sequential phases — keystream recovery, permu
 
 A zero-valued plaintext image is submitted to the oracle to obtain the corresponding ciphertext $C^{(0)}$. Since XOR-ing the keystream against an all-zero input leaves the keystream unmasked, the full keystream $\hat{X}$ is recovered directly from $C^{(0)}$ using a single oracle query. Table~\ref{tab:keystream} reports the recovery performance.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Keystream Recovery Performance}
 \label{tab:keystream}
@@ -477,7 +474,7 @@ All 65,536 keystream values — corresponding to every pixel of the $256 \times 
 
 To recover the pixel permutation map, a set of structured probe images is constructed. Each probe image isolates a single column by setting all pixels in that column to a known nonzero value while leaving the remaining pixels at zero. By submitting all 256 such probes to the oracle and inverting the keystream from Phase~1, the destination of every pixel under the permutation can be inferred directly. Table~\ref{tab:permutation} reports the recovery performance.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Permutation Map Recovery Performance}
 \label{tab:permutation}
@@ -502,7 +499,7 @@ The complete $256 \times 256$ permutation map was recovered without error using 
 
 With both the keystream $\hat{X}$ and the permutation map fully recovered, decryption of any target ciphertext proceeds without further oracle interaction. Given a ciphertext $C$, the recovered plaintext $\hat{P}$ is obtained by first inverting the XOR keystream layer and then applying the inverse permutation map. No additional oracle queries are required at this stage. Table~\ref{tab:decryption} reports the decryption accuracy.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Full Decryption Accuracy}
 \label{tab:decryption}
@@ -542,7 +539,7 @@ The recovered image is pixel-for-pixel identical to the original plaintext, with
 
 Table~\ref{tab:attack_summary} consolidates the query cost and recovery accuracy across all three phases of the attack.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Summary of the Chosen-Plaintext Attack}
 \label{tab:attack_summary}

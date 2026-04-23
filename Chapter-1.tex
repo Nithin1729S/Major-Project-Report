@@ -2,6 +2,8 @@
 \chapter{Role-Aware Log Representations for Enhanced Anomaly Detection via Latent Token Role Induction}
 % ─────────────────────────────────────────────────────────────────────────────
 
+This chapter presents a role-aware representation learning framework for log-based anomaly detection, outlining the limitations of existing parsing-based and parsing-free approaches and motivating the need for structurally informed representations. It introduces a method that performs latent token role induction and role-aware pooling to preserve functional distinctions within log messages, followed by a detailed description of the underlying concepts, model architecture, and training process, and concludes with experimental evaluation demonstrating improved detection performance and robustness across benchmark datasets.
+
 \section{Introduction}
 
 
@@ -52,7 +54,6 @@ Every time a software application or operating system performs an operation — 
 
 When a system is behaving normally, its logs follow recognizable, repetitive patterns. When something goes wrong — a hardware failure, a security breach, or a software bug — the log patterns deviate from the norm. \textbf{Anomaly detection} is the task of automatically identifying these deviations.
 
-\subsubsection{Formal Representation}
 
 Formally, each log message $m$ is treated as a sequence of tokens (words or sub-word units):
 \[
@@ -76,8 +77,6 @@ where $0$ denotes \emph{normal} behavior and $1$ denotes \emph{anomalous} behavi
 
 Machine learning models operate on numerical inputs, not raw text. An \textbf{embedding} is a mapping from each word or token to a dense numerical vector, constructed such that tokens with similar meanings are positioned close together in the resulting vector space. For instance, the tokens \texttt{``error''} and \texttt{``failure''} would ideally have similar vector representations, whereas \texttt{``error''} and \texttt{``timestamp''} would be far apart. This geometric structure allows downstream models to reason about semantic similarity without explicit symbolic rules.
 
-\subsubsection{Formal Definition}
-
 Each token $w_i$ is mapped to a continuous vector:
 \[
 e_i = \operatorname{Embed}(w_i) \;\in\; \mathbb{R}^d
@@ -87,7 +86,6 @@ where $d$ is the \textbf{embedding dimension} — a hyperparameter typically set
 M = \{\, e_1,\, e_2,\, \dots,\, e_T \,\}
 \]
 
-\subsubsection{Role-Aware Modeling}
 
 Log messages possess a rich internal structure. Within a single message, different tokens serve distinct functional \emph{roles}: some are status keywords (e.g., \texttt{INFO}, \texttt{ERROR}), others are entity identifiers (e.g., a process ID or a username), and still others carry numeric values (e.g., a port number or a memory address). \textbf{Role-aware modeling} explicitly encodes these structural roles alongside token content during the embedding process. By preserving role distinctions rather than treating all tokens uniformly, the model learns richer and more discriminative representations — a property that is especially valuable for detecting subtle anomalies in log sequences.
 
@@ -98,7 +96,6 @@ Log messages possess a rich internal structure. Within a single message, differe
 
 Not every token in a log message is equally relevant to understanding every other token. Consider the message: \texttt{``User admin login failed at port 22.''} To correctly interpret why \texttt{``failed''} is significant, a model must attend to \texttt{``login''} — not merely to the adjacent words. The \textbf{self-attention mechanism}~\cite{vaswani2017attention} allows each token to dynamically focus on, or \emph{attend to}, whichever other tokens are most relevant to it, regardless of their positional distance in the sequence. This is a key advantage over recurrent architectures, which struggle to propagate long-range dependencies through many sequential steps.
 
-\subsubsection{Query, Key, and Value Projections}
 
 For each token embedding $e_i$, three separate linear projections are computed using learned weight matrices $W_Q$, $W_K$, and $W_V$:
 
@@ -110,7 +107,6 @@ V_i &= W_V\, e_i \quad \text{(Value: the content this token contributes)}
 
 Intuitively, the query of token $i$ is matched against the keys of all other tokens in the sequence to determine how much attention token $i$ should pay to each of them.
 
-\subsubsection{Computing Attention Weights}
 
 The raw attention score between token $i$ and token $j$ is computed as the dot product of their query and key vectors, scaled by $\sqrt{d}$ to stabilize gradients in high-dimensional settings:
 \[
@@ -124,7 +120,6 @@ These raw scores are then normalized across all tokens using the \textbf{softmax
 
 By construction, $\alpha_{ij} \geq 0$ and $\sum_{j=1}^{T} \alpha_{ij} = 1$, so the weights form a valid probability distribution over the sequence.
 
-\subsubsection{Contextual Representation}
 
 The final representation of token $i$ is computed as a weighted sum of all value vectors, with tokens receiving higher attention weights contributing proportionally more:
 \[
@@ -426,7 +421,7 @@ Role modeling consistently improves F1-score across all four datasets. The most 
 
 Table~\ref{tab:ablation_numeric} presents the effect of discarding numeric tokens — as NeuralLog does — versus retaining them as first-class vocabulary items, as in the proposed framework.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Ablation Study: Impact of Numeric Token Preservation on F1-Score}
 \label{tab:ablation_numeric}
@@ -454,7 +449,7 @@ We evaluate F1-scores using 3, 5, 7, and 10 role categories across all datasets 
 
 To validate that the automatically induced roles correspond to semantically meaningful categories, we examine the tokens most strongly assigned to each role in the BGL dataset. Table~\ref{tab:role_examples} lists the representative tokens per learned role.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Top Tokens per Learned Role Category (BGL Dataset)}
 \label{tab:role_examples}
@@ -479,7 +474,7 @@ Despite receiving no human annotation, the learned roles align closely with intu
 
 Table~\ref{tab:efficiency} compares the preprocessing time, training time, and inference latency of all methods on the BGL dataset.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Computational Efficiency Comparison (BGL Dataset)}
 \label{tab:efficiency}

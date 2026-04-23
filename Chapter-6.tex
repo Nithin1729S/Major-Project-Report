@@ -2,6 +2,8 @@
 \chapter{Autoencoder-based Secret Image Sharing Scheme}
 % ─────────────────────────────────────────────────────────────────────────────
 
+This chapter presents an autoencoder-based secret image sharing framework that leverages deep learning to achieve efficient and secure image distribution through latent space compression. It introduces the architecture of encoder–decoder networks used to transform images into compact representations, which are then partitioned into multiple independent shares for secure distribution. The chapter details the design of the encoding, share generation, and reconstruction processes, followed by experimental evaluation demonstrating high reconstruction quality, strong confidentiality of individual shares, and significant storage reduction compared to traditional SIS schemes.
+
 \section{Introduction}
 
 With the rapid growth of deep learning, neural network-based approaches have become effective for image representation and compression. In the context of Secret Image Sharing (SIS), traditional methods rely on polynomial interpolation or logical operations, which often face limitations in storage efficiency and scalability. To address these issues, autoencoder-based approaches provide a data-driven alternative.
@@ -36,30 +38,6 @@ Autoencoders are a type of artificial neural network used for unsupervised learn
 
     \item \textbf{Output Layer:} Produces the reconstructed data. The network is trained to minimize reconstruction error, commonly using Mean Squared Error (MSE).
 \end{enumerate}
-
-
-\subsection{Peak Signal-to-Noise Ratio (PSNR)}
-
-PSNR measures the ratio between the maximum signal power and the noise affecting reconstruction quality. It is expressed in decibels (dB).
-
-\[
-PSNR = 10 \cdot \log_{10} \left( \frac{peakval^2}{MSE} \right)
-\]
-
-where:
-\begin{itemize}
-    \item $peakval$ is the maximum possible pixel value (e.g., 255 for 8-bit images),
-    \item $MSE$ is the Mean Squared Error between original and reconstructed images.
-\end{itemize}
-
-Higher PSNR indicates better reconstruction quality.
-\subsection{Structural Similarity Index Measure (SSIM)}
-
-SSIM evaluates image similarity based on human visual perception by considering three main components: luminance similarity, which measures brightness consistency; contrast similarity, which evaluates differences in intensity variation; and structural similarity, which captures the relationship between neighboring pixels.
-
-The SSIM value ranges from 0 to 1, where a value of 1 indicates identical images, and values closer to 0 indicate lower similarity between the images.
-
-
 
 \section{Literature Review}
 \label{sec:lad-litreview}

@@ -1,6 +1,7 @@
 % ─────────────────────────────────────────────────────────────────────────────
 \chapter{Optimization Techniques for Secret Image Sharing Schemes}
 % ─────────────────────────────────────────────────────────────────────────────
+This chapter presents a comprehensive study of optimization techniques for secret image sharing schemes, focusing on reducing shadow image size while preserving security and lossless reconstruction. It reviews polynomial-based, XOR-based, and multi-secret sharing approaches, and introduces preprocessing strategies such as image differencing, Huffman coding, leading-zero removal, and digit decomposition to improve storage efficiency. The chapter also explores the integration of pooling-based methods and autoencoder-based frameworks for enhanced compression, followed by experimental evaluation demonstrating the trade-offs between compression, reconstruction quality, and computational efficiency across various schemes.
 
 
 % ============================================================
@@ -274,8 +275,7 @@ Consider a simple $5 \times 5$ block of the original image:
 \bottomrule
 \end{tabular}
 \end{table}
- 
-\textbf{Integration with Wang and Su's Method}
+
  
 In the original scheme, the difference image is computed directly from the grayscale pixel values. In our optimized method, the new matrix generated after zero-stripping replaces the original image for subsequent steps of the base paper methodology.
  

@@ -2,6 +2,8 @@
 \chapter{Vulnerability Assessment of XOR-Based Secret Image Sharing Schemes Against Autoencoder Based Reconstruction Attacks}
 % ─────────────────────────────────────────────────────────────────────────────
 
+This chapter investigates the security of XOR-based secret image sharing schemes under learning-based adversaries by evaluating whether autoencoder models can reconstruct secret images from incomplete share sets. It introduces an encoder–decoder framework trained to exploit statistical priors of natural images and assesses reconstruction performance under varying levels of share availability. Through theoretical discussion and experimental evaluation using PSNR and SSIM metrics, the chapter demonstrates that while neural networks can achieve near-perfect reconstruction when all shares are present, they fail to recover meaningful information when shares are missing, thereby confirming the resilience of XOR-based schemes against such attacks.
+
 \section{Introduction}
 
 Secret image sharing schemes distribute a confidential image $S$ among $n$ participants by creating shares $\{s_1, s_2, ..., s_n\}$. To reconstruct $S$, a qualified subset of shares is required. XOR-based schemes achieve this with perfect secrecy; any strict subset of shares is statistically independent of the secret. They also avoid pixel expansion, making them efficient for practical use. However, this information-theoretic guarantee assumes that adversaries are computationally unbounded and have no prior knowledge of natural image statistics. Modern deep learning models can exploit these statistical patterns. This raises the question whether a learning-based adversary can reconstruct a meaningful approximation of $S$ from a limited subset of its XOR shares.
