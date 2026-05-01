@@ -215,7 +215,7 @@ The attack proceeds through three phases:
     \item \textbf{Phase 3 --- Full decryption} of any target ciphertext using the recovered parameters.
 \end{enumerate}
 
-The data complexity is $n + 1$ oracle queries for an $n \times n$ image, and the total computational cost is $\mathcal{O}(n^3)$, dominated by the Arnold map applications in Phase 2.
+The data complexity is $n + 1$ oracle queries for an $n \times n$ image, and the total computational cost is $\mathcal{O}(n^3)$, dominated by the Arnold map applications in Phase 2. Algorithm~\ref{alg:cpa} summarizes the complete attack procedure.
 
 \begin{algorithm}[t]
 \LinesNumbered

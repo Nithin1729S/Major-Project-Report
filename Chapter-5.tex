@@ -55,6 +55,7 @@ An \textbf{autoencoder} is a neural network trained to reproduce its own input a
 \centering
 \texttt{Input $\xrightarrow{\text{Encoder}}$ Latent Code $\xrightarrow{\text{Decoder}}$ Reconstructed Output}
 \end{minipage}
+\caption{High-level encoder--bottleneck--decoder structure of an autoencoder.}
 \label{fig:autoencoder_flow}
 \end{figure}
 
@@ -233,7 +234,7 @@ image.
 \section{Results and Analysis}
 \label{sec:lad-results}
 
-In this part, a thorough analysis is presented for the proposed learning-based reconstruction attack in scenarios with different levels of access to the XOR shares. Two cases are considered: (i) training of the decoder using all four XOR shares and testing in full and partial input scenarios (Figs.~\ref{fig:all_results}(a)-(d)), and (ii) training of the decoder using only three consecutive XOR shares (Figs.~\ref{fig:all_results}(e)-(f)).
+In this part, a thorough analysis is presented for the proposed learning-based reconstruction attack in scenarios with different levels of access to the XOR shares. Two cases are considered: (i) training of the decoder using all four XOR shares and testing in full and partial input scenarios (Figs.~\ref{fig:vis_all4}, \ref{fig:vis_miss1}, \ref{fig:vis_miss2}, and~\ref{fig:vis_miss3}), and (ii) training of the decoder using only three consecutive XOR shares (Figs.~\ref{fig:vis_123} and~\ref{fig:vis_234}).
 
 Reconstruction quality is measured both by numerical means using SSIM and PSNR
 values, and also visually using Fig.~\ref{fig:all_results}.

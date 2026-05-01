@@ -590,7 +590,7 @@ Figure~\ref{fig:test_image_cameraman} shows the standard benchmark image used in
 \label{fig:test_image_cameraman}
 \end{figure}
 
-Figure~\ref{fig:xor_full_pipeline} shows the overall process of our proposed XOR-based technique with pooling and permutation for the Cameraman image. The figure clearly shows the transition from the original secret image to the four shadow images after the creation of residuals and permutation. The shadow images, which look like noise, ensure that there is no leakage of information about the secret image. The noise nature of the permuted residuals proves that the permutation technique is effective in removing structural information.
+Figure~\ref{fig:xor_full_pipeline} shows the overall process of our proposed XOR-based technique with pooling and permutation for the Cameraman image. The figure clearly shows the transition from the original secret image in Figure~\ref{fig:Cameraman_orig} to the permuted residuals in Figure~\ref{fig:Cameraman_permuted} and the four shadow images in Figures~\ref{fig:lena_shadow1}, \ref{fig:lena_shadow2}, \ref{fig:lena_shadow3}, and~\ref{fig:lena_shadow4}. The shadow images, which look like noise, ensure that there is no leakage of information about the secret image. The noise nature of the permuted residuals proves that the permutation technique is effective in removing structural information.
 
 \begin{figure}[H]
 \centering
@@ -630,7 +630,7 @@ Figure~\ref{fig:xor_full_pipeline} shows the overall process of our proposed XOR
 \label{fig:xor_full_pipeline}
 \end{figure}
 
-Moreover, Figure~\ref{fig:cameraman_reconstruction_comparison} illustrates the reconstruction attempts with only three out of the four shares and two out of the four shares on the Cameraman test image. The reconstructed images are obviously noisy and do not have any resemblance to the original hidden image. This verifies that our scheme satisfies the basic requirement of SIS, which is that no information is revealed with less than the threshold number of shares.
+Moreover, Figure~\ref{fig:cameraman_reconstruction_comparison} illustrates the reconstruction attempts with only three out of the four shares and two out of the four shares on the Cameraman test image. In this comparison, Figure~\ref{fig:cameraman_orig2} shows the original image, Figures~\ref{fig:cameraman_2share} and~\ref{fig:cameraman_3share} show the partial reconstructions, and Figures~\ref{fig:cameraman_shadow1}, \ref{fig:cameraman_shadow2}, \ref{fig:cameraman_shadow3}, and~\ref{fig:cameraman_shadow4} show the corresponding shadow images. The reconstructed images are obviously noisy and do not have any resemblance to the original hidden image. This verifies that our scheme satisfies the basic requirement of SIS, which is that no information is revealed with less than the threshold number of shares.
 
 \begin{figure}[H]
 \centering

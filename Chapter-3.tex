@@ -663,7 +663,7 @@ plaintext recovery without any knowledge of the secret key.
 
 The attacker stores $256$ probe ciphertexts of size $N \times 3$ bytes each,
 for a total of $\mathcal{O}(256 \cdot N) = \mathcal{O}(N)$ memory.
-Table~\ref{tab:complexity_mmcbie} compares the attack complexity against the MMCBIE encryption cost.
+Table~\ref{tab:complexity_mmcbie} compares the attack complexity against the MMCBIE encryption cost, and Algorithm~\ref{alg:cpa_mmcbie} summarizes the complete CPA procedure.
 
 
 \begin{algorithm}[t]
@@ -827,7 +827,7 @@ Pixel-match rate                                             & 100\% \\
 \setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{0.8}
 \caption{Summary of the chosen-plaintext attack on the MMCBIE scheme. Total oracle queries: $256$.}
-\label{tab:attack_summary}
+\label{tab:mmcbie_attack_summary}
 \resizebox{0.8\linewidth}{!}{
 \begin{tabular}{llccc}
 \toprule
@@ -841,7 +841,7 @@ Phase & Goal & Oracle calls & Items recovered & Perfect match \\
 \end{tabular}
 }
 \end{table}
-\noindent It is evident from the outcomes that an image encrypted by MMCBIE is possible to recover completely through just $256$ queries of the oracle, regardless of the image's size. Therefore, MMCBIE is \emph{entirely insecure} in the CPA model even considering that it uses a $512$ bit-long key. Table~\ref{tab:attack_summary} consolidates the complete attack statistics across all phases. Figure~\ref{fig:mmcbie_cpa_result} visually confirms the pixel-perfect recovery achieved by the attack. As the following analysis proves, good results for NPCR, UACI, and Entropy do not mean cryptographic security~\cite{wen2023cryptanalysis}.
+\noindent It is evident from the outcomes that an image encrypted by MMCBIE is possible to recover completely through just $256$ queries of the oracle, regardless of the image's size. Therefore, MMCBIE is \emph{entirely insecure} in the CPA model even considering that it uses a $512$ bit-long key. Table~\ref{tab:mmcbie_attack_summary} consolidates the complete attack statistics across all phases. Figure~\ref{fig:mmcbie_cpa_result} visually confirms the pixel-perfect recovery achieved by the attack. As the following analysis proves, good results for NPCR, UACI, and Entropy do not mean cryptographic security~\cite{wen2023cryptanalysis}.
 
 \begin{figure}[t]
     \centering
