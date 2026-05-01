@@ -8,7 +8,7 @@ This chapter investigates the security of XOR-based secret image sharing schemes
 
 Secret image sharing schemes distribute a confidential image $S$ among $n$ participants by creating shares $\{s_1, s_2, ..., s_n\}$. To reconstruct $S$, a qualified subset of shares is required. XOR-based schemes achieve this with perfect secrecy; any strict subset of shares is statistically independent of the secret. They also avoid pixel expansion, making them efficient for practical use. However, this information-theoretic guarantee assumes that adversaries are computationally unbounded and have no prior knowledge of natural image statistics. Modern deep learning models can exploit these statistical patterns. This raises the question whether a learning-based adversary can reconstruct a meaningful approximation of $S$ from a limited subset of its XOR shares.
 
-This project examines this threat by proposing an autoencoder-based reconstruction attack targeting XOR-generated secret shares. An encoder-decoder network with skip connections is trained to recover the secret image from a consecutive subset of $k < n$ shares, without needing any cryptographic key material or the remaining shares. The attack uses learned priors about natural image structures such as edges, textures, and semantic content to compensate for missing cryptographic information. The framework is evaluated across various benchmark image datasets using PSNR and SSIM as metrics for fidelity.
+This chapter examines this threat by proposing an autoencoder-based reconstruction attack targeting XOR-generated secret shares. An encoder-decoder network with skip connections is trained to recover the secret image from a consecutive subset of $k < n$ shares, without needing any cryptographic key material or the remaining shares. The attack uses learned priors about natural image structures such as edges, textures, and semantic content to compensate for missing cryptographic information. The framework is evaluated across various benchmark image datasets using PSNR and SSIM as metrics for fidelity.
 
 \section{Preliminaries}
 \label{sec:lad-prelim}
@@ -40,7 +40,7 @@ For example, in a $(3, 5)$ scheme, the secret is split into 5 shares distributed
 
 \subsection{Security Assumptions and Their Limitations}
 
-The information-theoretic security guarantee above assumes that shares are analyzed \emph{only} through classical combinatorial means. However, modern deep learning models can sometimes extract partial information by detecting subtle statistical patterns across shares — an assumption that this project explicitly tests and challenges.
+The information-theoretic security guarantee above assumes that shares are analyzed \emph{only} through classical combinatorial means. However, modern deep learning models can sometimes extract partial information by detecting subtle statistical patterns across shares — an assumption that this chapter explicitly tests and challenges.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \subsection{Autoencoders}
@@ -73,7 +73,7 @@ Autoencoders are trained in an \textbf{unsupervised} fashion — no labels are r
 \[
 \mathcal{L}(x, \hat{x}) = \frac{1}{N} \sum_{i=1}^{N} (x_i - \hat{x}_i)^2
 \]
-where $N$ is the number of elements (e.g., pixels). In the context of this project, autoencoders are used to learn mappings from image shares back to the original secret image, thereby assessing whether the information-theoretic security of SIS schemes holds under deep learning attacks.
+where $N$ is the number of elements (e.g., pixels). In the context of this chapter, autoencoders are used to learn mappings from image shares back to the original secret image, thereby assessing whether the information-theoretic security of SIS schemes holds under deep learning attacks.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \subsection{Image Quality Evaluation Metrics}
