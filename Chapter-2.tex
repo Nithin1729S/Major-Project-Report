@@ -27,7 +27,7 @@ This section introduces the foundational concepts and theoretical background req
 
 Medical images and other sensitive visual data must be adequately protected prior to transmission or storage. Classical block ciphers such as AES operate on byte streams and do not exploit the inherent spatial structure of images. \textbf{Chaos-based encryption} offers a compelling alternative: it leverages the output of \emph{chaotic dynamical systems}---mathematical systems exhibiting deterministic yet unpredictable, highly sensitive behaviour---as keystreams to scramble image data.
 
-\subsubsection{Properties of Chaotic Systems Relevant to Cryptography}
+\subsubsection{Properties of Chaotic Systems Relevant to Cryptography:}
 
 A chaotic system is characterised by the following properties, which make it attractive for generating cryptographic material:
 
@@ -39,7 +39,7 @@ A chaotic system is characterised by the following properties, which make it att
     \item \textbf{Mixing property}: Nearby initial states rapidly spread across the entire state space, contributing to effective diffusion of information throughout the output sequence.
 \end{itemize}
 
-\subsubsection{Permutation-Diffusion Architecture}
+\subsubsection{Permutation-Diffusion Architecture:}
 
 A typical chaos-based image encryption scheme follows a two-phase structure:
 
@@ -72,46 +72,21 @@ y_{i+1} = \sin\!\Bigl(\pi\bigl(4\theta\, y_i(1 - y_i) + (1 - \theta)\sin(\pi x_{
 \]
 where $\theta \in (0, 1)$ is a coupling parameter that governs the balance between the logistic and sine components. The coupling between the two sequences produces a wider and more uniform chaotic range than either component alone. The output sequences serve as keystreams for both the permutation and diffusion phases of the encryption scheme.
 
+
 % ------------------------------------------------------------
 \subsection{Cryptanalysis of Image Encryption Schemes}
 % ------------------------------------------------------------
 
-\textbf{Cryptanalysis} is the science of analysing encryption schemes to identify weaknesses that allow an adversary to recover plaintext or the secret key without legitimate authorisation. In the context of image encryption, successful cryptanalysis corresponds to recovering the original image from its encrypted form.
+\textbf{Cryptanalysis} is the science of analysing encryption schemes to identify weaknesses that allow an adversary to recover plaintext or the secret key without legitimate authorisation. In the context of image encryption, successful cryptanalysis corresponds to recovering the original image from its encrypted form. Different attack models assume varying levels of adversary capability, and this work focuses on the strongest standard model used in symmetric cryptography.
 
+A \textbf{Chosen-Plaintext Attack (CPA)} assumes that the adversary has access to an encryption oracle that returns ciphertext $C = \mathcal{E}(P)$ for any selected plaintext image $P$. This allows the adversary to choose inputs strategically in order to extract information about the secret key or the internal structure of the cipher. Under modern cryptographic standards, any scheme that fails to resist CPA is considered insecure.
 
-Different attack models assume varying levels of adversary capability. This work focuses primarily on the most powerful standard model used in symmetric cryptography.
+Many chaos-based image encryption schemes exhibit structural weaknesses that make them vulnerable to chosen-plaintext attacks. One common weakness arises in the diffusion phase when each pixel is XORed with a keystream that is independent of the plaintext. In this case, encrypting an all-zero image $P = \mathbf{0}$ produces $C = \mathbf{0} \oplus K = K$, which directly reveals the keystream. Once the keystream is known, any ciphertext generated using the same key can be decrypted.
 
-\paragraph{Chosen-Plaintext Attack (CPA).}
-In a \textbf{Chosen-Plaintext Attack}, the adversary is granted access to an \emph{encryption oracle}: a black box that, given any image the adversary selects, returns its encrypted counterpart. Formally:
-\[
-C = \mathcal{E}(P),
-\]
-where $P$ is a chosen plaintext image and $C$ is the resulting ciphertext. The adversary selects inputs strategically to extract information about the secret key or the internal structure of the cipher. Under modern cryptographic standards, any cipher that cannot withstand a CPA is considered insecure.
+Another common weakness appears when permutation and diffusion are independent operations. If the permutation mapping does not depend on pixel values, it can be recovered using structured probe images. For example, an image containing a single non-zero pixel allows the adversary to observe its new position after encryption. Repeating this process for all pixel positions enables reconstruction of the complete permutation mapping.
 
-\subsubsection{Exploiting Structural Weaknesses}
+An encryption scheme is therefore fully breakable under a chosen-plaintext attack if two conditions hold: the keystream used in diffusion is static and independent of the plaintext, and the permutation and diffusion processes are independent of each other. When both conditions are satisfied, the adversary can recover the keystream, reconstruct the permutation mapping, and invert the entire encryption process without requiring the secret key.
 
-Many chaos-based image encryption schemes exhibit specific structural weaknesses that render them vulnerable to chosen-plaintext attacks. The two most prevalent weaknesses are described below.
-
-\paragraph{Keystream Recovery via All-Zero Images.}
-If the diffusion phase XORs each pixel with a keystream value that is \emph{independent of the plaintext pixel values}, the keystream can be extracted trivially. By encrypting an all-zero image $P = \mathbf{0}$:
-\[
-C = \mathbf{0} \oplus K = K,
-\]
-the resulting ciphertext directly reveals the keystream $K$. This recovered keystream can subsequently be used to decrypt any ciphertext encrypted under the same key, completely breaking the scheme.
-
-\paragraph{Permutation Recovery via Structured Probe Images.}
-If the permutation and diffusion phases are applied independently (i.e., the permutation mapping does not depend on pixel values), the pixel permutation table can be recovered by encrypting specially crafted probe images. For example, an image containing exactly one non-zero pixel allows the adversary to observe precisely where that pixel is relocated after permutation. By repeating this process for each pixel position, the complete permutation mapping can be reconstructed.
-
-\subsubsection{Necessary Conditions for a Successful CPA Break}
-
-An encryption scheme is fully breakable under a chosen-plaintext attack if both of the following conditions hold:
-
-\begin{itemize}
-    \item The keystream used in the diffusion phase is \textbf{static} (independent of the plaintext), allowing it to be extracted directly as described above.
-    \item The permutation and diffusion operations are \textbf{independent} of each other and of the plaintext, allowing them to be recovered and reversed in isolation.
-\end{itemize}
-
-When both conditions are satisfied, an adversary can first recover the keystream, then reconstruct the permutation mapping, and thereby invert the entire encryption process with complete accuracy---without ever obtaining the secret key. This forms the theoretical foundation for the cryptanalytic methodology implemented in this project.
 % ------------------------------------------------------------
 \section{Literature Review}
 % ------------------------------------------------------------
