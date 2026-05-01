@@ -120,7 +120,7 @@ scale=0.7, transform shape
 The encoder processes an input image of size $128 \times 128 \times 1$ and converts it into a latent vector of size $L = 1024$.
 
 \begin{itemize}
-    \item \textbf{Convolutional Downsampling:} Three convolutional layers with filters $(32, 64, 128)$ and stride 2 are used to reduce spatial dimensions and extract hierarchical features. Each layer uses ReLU activation followed by Batch Normalization.
+    \item \textbf{Convolutional Downsampling:} Three convolutional layers with filters \\ $(32, 64, 128)$ and stride 2 are used to reduce spatial dimensions and extract hierarchical features. Each layer uses ReLU activation followed by Batch Normalization.
 
     \item \textbf{Residual Blocks:} Residual connections are used to preserve features and stabilize training. Each block follows:
     \begin{equation}

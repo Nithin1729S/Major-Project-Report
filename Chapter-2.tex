@@ -174,7 +174,7 @@ where $F = 255$ for 8-bit imagery and $X_i = \lfloor x_i \times 2^{32} \rfloor$ 
 % -----------------------------------------------------------------------
 \subsection{Chosen-Plaintext Attack Framework}
 
-The overall attack framework is shown in Figure~\ref{fig:cpa}, comprising three phases: keystream extraction, permutation map reconstruction, and full decryption of any target ciphertext.
+The overall attack framework is shown in Figure~\ref{fig:cpa}, comprising three phases: \\ keystream extraction, permutation map reconstruction, and full decryption of any target ciphertext.
 
 \begin{figure}[t]
 \centering
@@ -418,7 +418,7 @@ All experiments were conducted in Python~3 on a $256 \times 256$ grayscale Camer
 \[
 K_1 = P_i = 10, \qquad K_2 = \{\,x_0 = 0.8,\; y_0 = 0.5,\; \theta = 0.99\,\}
 \]
-The attack is conducted in three sequential phases — keystream recovery, permutation map recovery, and full decryption — each described and analyzed below.
+The attack is conducted in three sequential phases: keystream recovery, permutation map recovery, and full decryption. Each phase is described and analyzed below.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \subsection{Phase 1: Keystream Recovery}
@@ -443,7 +443,7 @@ Mean deviation         & 0.000000 \\
 \end{tabular}
 \end{table}
 
-All 65,536 keystream values — corresponding to every pixel of the $256 \times 256$ image — were recovered exactly using a single oracle query, with zero deviation from the ground-truth keystream. This confirms that the additive keystream layer of the scheme provides no resistance to a zero-plaintext probe.
+All 65,536 keystream values, corresponding to every pixel of the $256 \times 256$ image, were recovered exactly using a single oracle query, with zero deviation from the ground-truth keystream. This confirms that the additive keystream layer of the scheme provides no resistance to a zero-plaintext probe.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \subsection{Phase 2: Permutation Map Recovery}
@@ -468,7 +468,7 @@ Mean deviation      & 0.000000 \\
 \end{tabular}
 \end{table}
 
-The complete $256 \times 256$ permutation map was recovered without error using exactly 256 oracle queries — one per image column. The independence of the permutation and keystream layers means that each can be recovered sequentially without interference, a structural weakness that this phase directly exploits.
+The complete $256 \times 256$ permutation map was recovered without error using exactly 256 oracle queries, one per image column. The independence of the permutation and keystream layers means that each can be recovered sequentially without interference, a structural weakness that this phase directly exploits.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \subsection{Phase 3: Full Decryption}
@@ -533,10 +533,10 @@ Decryption          & 0   & Full plaintext image         & Exact \\
 \end{tabular}
 \end{table}
 
-The entire scheme is broken using only $n + 1 = 257$ oracle queries, where $n = 256$ is the image width in pixels. The total query count grows linearly with image dimension, confirming that the attack scales efficiently to larger images. Crucially, zero additional queries are needed at decryption time — once the keystream and permutation map are known, arbitrary ciphertexts can be decrypted instantaneously.
+The entire scheme is broken using only $n + 1 = 257$ oracle queries, where $n = 256$ is the image width in pixels. The total query count grows linearly with image dimension, confirming that the attack scales efficiently to larger images. Crucially, zero additional queries are needed at decryption time; once the keystream and permutation map are known, arbitrary ciphertexts can be decrypted instantaneously.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Summary}
 % ─────────────────────────────────────────────────────────────────────────────
 
-Three important conclusions emerge from these results. \textbf{Complete cryptographic break under CPA.} The scheme is fully broken using only $n + 1$ chosen-plaintext queries. The underlying vulnerability is structural: the keystream and permutation layers are independent and deterministic given the key, allowing each to be recovered separately without solving for the key itself. This reduces the effective security of the scheme to the resistance of its oracle interface, which provides no protection against structured probing. \textbf{Perfect plaintext reconstruction.} The recovered image is pixel-for-pixel identical to the original plaintext across all experiments. A maximum pixel difference of zero confirms that the attack introduces no approximation error — it is an exact, algebraic break rather than a statistical one. \textbf{Disconnect between statistical and cryptographic security.} The scheme of Jain et al.~\cite{jain2021medical} reports strong statistical metrics — high entropy, high NPCR, and low UACI values — which are standard indicators of confusion and diffusion quality. However, these metrics evaluate the appearance of ciphertext, not resistance to structured attacks. This result reinforces a well-established principle in cryptanalysis: favorable statistical properties are necessary but not sufficient for cryptographic security. A scheme that passes all standard statistical tests may still be trivially breakable under CPA if its structure admits efficient keystream or permutation recovery, as demonstrated here.
+Three important conclusions emerge from these results. \textbf{Complete cryptographic break under CPA.} The scheme is fully broken using only $n + 1$ chosen-plaintext queries. The underlying vulnerability is structural: the keystream and permutation layers are independent and deterministic given the key, allowing each to be recovered separately without solving for the key itself. This reduces the effective security of the scheme to the resistance of its oracle interface, which provides no protection against structured probing. \textbf{Perfect plaintext reconstruction.} The recovered image is pixel-for-pixel identical to the original plaintext across all experiments. A maximum pixel difference of zero confirms that the attack introduces no approximation error; it is an exact, algebraic break rather than a statistical one. \textbf{Disconnect between statistical and cryptographic security.} The scheme of Jain et al.~\cite{jain2021medical} reports strong statistical metrics, including high entropy, high NPCR, and low UACI values, which are standard indicators of confusion and diffusion quality. However, these metrics evaluate the appearance of ciphertext, not resistance to structured attacks. This result reinforces a well-established principle in cryptanalysis: favorable statistical properties are necessary but not sufficient for cryptographic security. A scheme that passes all standard statistical tests may still be trivially breakable under CPA if its structure admits efficient keystream or permutation recovery, as demonstrated here.

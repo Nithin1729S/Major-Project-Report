@@ -483,7 +483,7 @@ node distance=1.4cm
 
 MMCBIE applies three successive stages to the plaintext:
 
-\paragraph{Stage 1 — Hénon Chaotic Transform.}
+\paragraph{Stage 1: Hénon Chaotic Transform.}
 A two-dimensional Hénon sequence is generated from subkeys $(x_H, y_H)$:
 \begin{align}
   x_{i+1} &= 1 - a\,x_i^2 + y_i, \qquad
@@ -503,7 +503,7 @@ The same value $H[k]$ is XORed into every colour channel:
   \label{eq:stage1}
 \end{equation}
 
-\paragraph{Stage 2 — Key Mixing.}
+\paragraph{Stage 2: Key Mixing.}
 A 192-bit master key is split into three arrays of eight bytes each,
 $\mathrm{MK}_R, \mathrm{MK}_G, \mathrm{MK}_B \in \mathbb{Z}_{256}^{8}$.
 The colour channels are cyclically cross-added with period~8:
@@ -519,7 +519,7 @@ The output red channel is a function of the green plaintext channel, the output
 green channel is a function of the blue plaintext channel, and the output blue
 channel is a function of the red plaintext channel.
 
-\paragraph{Stage 3 — 2D-Logistic Chaotic Transform.}
+\paragraph{Stage 3: 2D-Logistic Chaotic Transform.}
 A two-dimensional logistic sequence is generated from subkeys $(x_L, y_L, r)$:
 \begin{align}
   x_{i+1} &= r\,(3y_i + 1)\,x_i\,(1-x_i), \qquad

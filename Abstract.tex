@@ -5,7 +5,7 @@
 
 This work presents seven interconnected projects spanning log-based anomaly detection, secret image sharing, and cryptanalysis of image encryption schemes.
 
-The first chapter proposes a role-aware representation learning framework for log anomaly detection that overcomes limitations of prior parsing-free methods. Latent token roles — state, entity, action, quantity, and location — are induced automatically from anomaly labels without manual annotation, while numeric tokens are explicitly preserved. Evaluated on HDFS, BGL, Thunderbird, and Spirit, the framework achieves F1-scores of 0.98--0.99, consistently outperforming NeuralLog with negligible computational overhead.
+The first chapter proposes a role-aware representation learning framework for log anomaly detection that overcomes limitations of prior parsing-free methods. Latent token roles, namely state, entity, action, quantity, and location, are induced automatically from anomaly labels without manual annotation, while numeric tokens are explicitly preserved. Evaluated on HDFS, BGL, Thunderbird, and Spirit, the framework achieves F1-scores of 0.98--0.99, consistently outperforming NeuralLog with negligible computational overhead.
 
 The second chapter performs cryptanalysis of a chaos-based medical image encryption scheme (Arnold's Cat Map and 2D-LSCM) under the chosen-plaintext attack model. By exploiting the plaintext-independence of the keystream and the separability of permutation and diffusion stages, the entire encryption is inverted without the secret key using only $n+1$ oracle queries for an $n \times n$ image, revealing fundamental weaknesses in chaos-based designs.
 

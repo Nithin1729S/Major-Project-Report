@@ -14,7 +14,7 @@ This chapter examines this threat by proposing an autoencoder-based reconstructi
 \label{sec:lad-prelim}
 
 
-Suppose a highly sensitive image — such as a medical scan or a classified photograph — needs to be stored across multiple servers. Storing the full image on any single server is risky: if that server is compromised, the secret is exposed. \textbf{Secret image sharing (SIS)} solves this by splitting the image into multiple pieces called \textbf{shares}, such that:
+Suppose a highly sensitive image, such as a medical scan or a classified photograph, needs to be stored across multiple servers. Storing the full image on any single server is risky: if that server is compromised, the secret is exposed. \textbf{Secret image sharing (SIS)} solves this by splitting the image into multiple pieces called \textbf{shares}, such that:
 
 \begin{itemize}
     \item Any sufficiently large subset of shares can \emph{perfectly reconstruct} the original image.
@@ -33,21 +33,21 @@ with the following guarantees:
 
 \begin{itemize}
     \item \textbf{Reconstruction}: Any $k$ or more shares suffice to reconstruct $S$ exactly.
-    \item \textbf{Security}: Any collection of fewer than $k$ shares is statistically independent of $S$ — no information is leaked.
+    \item \textbf{Security}: Any collection of fewer than $k$ shares is statistically independent of $S$, so no information is leaked.
 \end{itemize}
 
 For example, in a $(3, 5)$ scheme, the secret is split into 5 shares distributed across 5 servers. Any 3 servers can collaborate to recover the secret, but any 2 servers (even acting together) learn nothing. This provides both \emph{redundancy} (against server failure) and \emph{security} (against server compromise).
 
 \subsection{Security Assumptions and Their Limitations}
 
-The information-theoretic security guarantee above assumes that shares are analyzed \emph{only} through classical combinatorial means. However, modern deep learning models can sometimes extract partial information by detecting subtle statistical patterns across shares — an assumption that this chapter explicitly tests and challenges.
+The information-theoretic security guarantee above assumes that shares are analyzed \emph{only} through classical combinatorial means. However, modern deep learning models can sometimes extract partial information by detecting subtle statistical patterns across shares, an assumption that this chapter explicitly tests and challenges.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \subsection{Autoencoders}
 % ─────────────────────────────────────────────────────────────────────────────
 
 
-An \textbf{autoencoder} is a neural network trained to reproduce its own input at the output. At first glance this seems trivial — why train a network to copy an input? The key insight is that the network is forced to pass the information through a \textbf{bottleneck}: a hidden layer with far fewer dimensions than the input. To reconstruct the input faithfully despite this bottleneck, the network is forced to learn a \emph{compact, meaningful representation} of the data. Figure~\ref{fig:autoencoder_flow} illustrates the high-level encoder–bottleneck–decoder structure.
+An \textbf{autoencoder} is a neural network trained to reproduce its own input at the output. The key insight is that the network is forced to pass the information through a \textbf{bottleneck}: a hidden layer with far fewer dimensions than the input. To reconstruct the input faithfully despite this bottleneck, the network is forced to learn a \emph{compact, meaningful representation} of the data. Figure~\ref{fig:autoencoder_flow} illustrates the high-level encoder–bottleneck–decoder structure.
 
 \begin{figure}[h]
 \centering
@@ -71,7 +71,7 @@ An autoencoder consists of five conceptual stages:
 \end{enumerate}
 
 
-Autoencoders are trained in an \textbf{unsupervised} fashion — no labels are required. The training objective is to minimize the \textbf{reconstruction error} between the input $x$ and the output $\hat{x}$, typically measured by the Mean Squared Error (MSE):
+Autoencoders are trained in an \textbf{unsupervised} fashion, so no labels are required. The training objective is to minimize the \textbf{reconstruction error} between the input $x$ and the output $\hat{x}$, typically measured by the Mean Squared Error (MSE):
 \begin{equation}
 \mathcal{L}(x, \hat{x}) = \frac{1}{N} \sum_{i=1}^{N} (x_i - \hat{x}_i)^2
 \end{equation}
