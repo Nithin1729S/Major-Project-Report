@@ -20,7 +20,7 @@ The automated identification of anomalous patterns in log message sequences gene
 \label{sec:lad-prelim}
 % ─────────────────────────────────────────────────────────────────────────────
 
-This section introduces the foundational concepts and theoretical background required to understand the log-based anomaly detection methodology developed in this work. Each concept is explained from first principles before the formal mathematical notation is presented. The three main areas covered are: log representation and anomaly formulation, token embedding and representation learning, and the self-attention mechanism.
+This section introduces the foundational concepts and theoretical background required to understand the log-based anomaly detection methodology developed in this chapter. Each concept is explained from first principles before the formal mathematical notation is presented. The three main areas covered are: log representation and anomaly formulation, token embedding and representation learning, and the self-attention mechanism.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \subsection{Log Representation and Anomaly Formulation}
@@ -162,7 +162,7 @@ The recent proliferation of large language models has opened new avenues for log
 
 Despite this progress, NeuralLog and existing parsing-free methods share two key limitations. First, they treat all tokens within a log message uniformly by simply averaging their contextual embeddings. This approach conflates tokens with functionally distinct roles — states, entities, actions, quantities, and locations — into a single undifferentiated vector, discarding structural information that may be critical for anomaly identification. Second, numeric tokens are routinely discarded on the assumption that they contribute noise; however, this omits important anomaly indicators such as HTTP error codes, memory usage values, and hardware addresses.
 
-A recurring theme across the literature, highlighted by comprehensive surveys~\cite{landauer2023survey}, is the necessity of structurally aware log representation. Existing methods — including parsing-free approaches — largely treat log tokens uniformly, aggregating their embeddings without regard to the functional roles that individual tokens play within a message. This motivates the role-aware representation framework proposed in this work, which explicitly models token roles to construct more discriminative and semantically faithful log representations, as described in Section~\ref{sec:lad-work}.
+A recurring theme across the literature, highlighted by comprehensive surveys~\cite{landauer2023survey}, is the necessity of structurally aware log representation. Existing methods — including parsing-free approaches — largely treat log tokens uniformly, aggregating their embeddings without regard to the functional roles that individual tokens play within a message. This motivates the role-aware representation framework proposed in this chapter, which explicitly models token roles to construct more discriminative and semantically faithful log representations, as described in Section~\ref{sec:lad-chapter}.
 
 To overcome these limitations, we propose a \textbf{role-aware representation learning framework} that automatically identifies token roles from sequence-level anomaly labels, without requiring manual annotation or log parsing. A \textit{role induction network} assigns a soft probability distribution over five role categories for each token, and \textit{role-aware pooling} then constructs structured message representations that preserve both the semantic content and the structural organization of each log entry.
 
@@ -224,7 +224,7 @@ where each $\mathbf{h}_i \in \mathbb{R}^{768}$ encodes token $i$ in the full con
 \subsection{Latent Token Role Induction}
 % ─────────────────────────────────────────────────────────────────────────────
 
-The central contribution of this work is the \textbf{latent token role induction} mechanism. The key hypothesis is that tokens in log messages fulfill distinct functional roles — some denote system states, others identify components, others describe operations, and some convey quantitative or spatial information — and that modeling these roles explicitly produces representations better suited to anomaly detection than naive uniform averaging.
+The central contribution of this chapter is the \textbf{latent token role induction} mechanism. The key hypothesis is that tokens in log messages fulfill distinct functional roles — some denote system states, others identify components, others describe operations, and some convey quantitative or spatial information — and that modeling these roles explicitly produces representations better suited to anomaly detection than naive uniform averaging.
 
 \subsubsection{Role Categories}
 

@@ -10,7 +10,7 @@ With the rapid growth of deep learning, neural network-based approaches have bec
 
 An autoencoder is a neural network architecture designed to learn compact latent representations of input data. It consists of two main components: an encoder that compresses the input image into a lower-dimensional latent vector, and a decoder that reconstructs the image from this representation. This property makes autoencoders suitable for reducing redundancy while preserving essential image features.
 
-In this work, an autoencoder-based SIS framework is considered, where the encoder transforms the input image into a compressed latent space. This latent representation is then divided into multiple independent shares. These shares are distributed such that only a sufficient combination of them enables reconstruction. The decoder utilizes the combined latent information to recover the original image.
+In this chapter, an autoencoder-based SIS framework is considered, where the encoder transforms the input image into a compressed latent space. This latent representation is then divided into multiple independent shares. These shares are distributed such that only a sufficient combination of them enables reconstruction. The decoder utilizes the combined latent information to recover the original image.
 
 Unlike conventional SIS schemes, this approach achieves significant reduction in share size due to learned compression, while maintaining high reconstruction quality. Experimental results show that the method preserves structural similarity and minimizes information loss, demonstrating its effectiveness for secure and storage-efficient image sharing.
 
@@ -219,7 +219,7 @@ Shadow 1 & Shadow 2 & Shadow 3 & Shadow 4 \\
 
 \section{Summary}
 
-This work presents an autoencoder-based Secret Image Sharing (SIS) scheme that leverages deep learning for secure and storage-efficient image distribution. The proposed method encodes images into a compact latent representation and divides it into multiple independent shares, ensuring that no single share reveals meaningful information about the original image.
+This chapter presents an autoencoder-based Secret Image Sharing (SIS) scheme that leverages deep learning for secure and storage-efficient image distribution. The proposed method encodes images into a compact latent representation and divides it into multiple independent shares, ensuring that no single share reveals meaningful information about the original image.
 
 The model achieves high reconstruction quality ($\mathrm{PSNR} > 30\,\mathrm{dB}$, $\mathrm{SSIM} \approx 1.0$), while individual shares remain dissimilar to the original, ensuring strong confidentiality. It also reduces storage by up to $98\%$.
 

@@ -110,7 +110,7 @@ To address this problem, XOR-based secret image sharing schemes have been propos
 
 However, the security proofs for the XOR-based constructions assume the presence of adversaries without access to structural priors about natural images. Recent deep learning advances contradict this. Convolutional Neural Networks (CNNs) \cite{lecun1998gradient} have shown impressive performance in learning hierarchical spatial representations from image data. Architectural innovations such as batch normalization \cite{ioffe2015batch} improve the stability of the learning process, while encoder-decoder architectures, such as the U-Net \cite{ronneberger2015unet}, enable accurate reconstruction for inverse image problems. Autoencoders, when learned using pixel-wise reconstruction objectives, can extract compact feature representations that can reconstruct structured image information from corrupted images. Moreover, the use of Perceptual Loss functions \cite{johnson2016perceptual} can improve the reconstruction quality for images. The reconstruction quality for such images can be measured using full-reference image similarity measures. The Peak Signal-to-Noise Ratio (PSNR) can measure the pixel-wise fidelity of the reconstruction, while the Structural Similarity Index Measure (SSIM) \cite{wang2004image} can measure the structural similarity between images by comparing the luminance, contrast, and structural information.
 
-In spite of the solid theoretical foundation of secret sharing via XOR and the remarkable advancements in the field of image reconstruction via deep learning methods, only a few works have attempted to explore the possibility of reconstructing the secret image via learning the priors of images and utilizing only certain subsets of the shares generated via XOR operations. Most of the existing works have been dedicated to enhancing the efficiency and robustness of secret image sharing methods and verifying their feasibility rather than testing their robustness against learning-based attacks. This work attempts to bridge this gap and test the robustness of secret image sharing via XOR operations against learning-based attacks and determine whether the secret image can be reconstructed via learning the priors of images and utilizing only certain subsets of the shares generated via XOR operations.
+In spite of the solid theoretical foundation of secret sharing via XOR and the remarkable advancements in the field of image reconstruction via deep learning methods, only a few works have attempted to explore the possibility of reconstructing the secret image via learning the priors of images and utilizing only certain subsets of the shares generated via XOR operations. Most of the existing works have been dedicated to enhancing the efficiency and robustness of secret image sharing methods and verifying their feasibility rather than testing their robustness against learning-based attacks. This chapter attempts to bridge this gap and test the robustness of secret image sharing via XOR operations against learning-based attacks and determine whether the secret image can be reconstructed via learning the priors of images and utilizing only certain subsets of the shares generated via XOR operations.
 
 
 \section{Work Done}
@@ -139,7 +139,7 @@ According to traditional cryptographic theory~\cite{shannon1949communication},
 a combination of shares that is less than four shares will lack the sufficient
 information required to reconstruct the secret image. All shares are dynamically
 generated during training to avoid memorization.
-Figure~\ref{fig:xor_attack_pipeline} illustrates the complete attack pipeline used in this work.
+Figure~\ref{fig:xor_attack_pipeline} illustrates the complete attack pipeline used in this chapter.
 
 \begin{figure}[htbp]
 \centering
@@ -477,6 +477,6 @@ Both sets of low SSIM ($\approx 0.21$) and PSNR ($< 12$ dB) scores suggest that 
 %--------------------------------------------------
 \section{Summary}
 
-This work examined the robustness of XOR-based visual secret sharing schemes under learning-based adversaries. Neural networks can approximate the reconstruction function when all four shares are available, achieving near-lossless results (SSIM $= 0.9720$, PSNR $= 33.87$~dB), showing that data-driven models can learn the full mapping when complete information is present.
+This chapter examined the robustness of XOR-based visual secret sharing schemes under learning-based adversaries. Neural networks can approximate the reconstruction function when all four shares are available, achieving near-lossless results (SSIM $= 0.9720$, PSNR $= 33.87$~dB), showing that data-driven models can learn the full mapping when complete information is present.
 
 However, reconstruction fails under missing-share conditions, where performance drops significantly and meaningful recovery becomes infeasible. This confirms that the XOR scheme retains its information-theoretic security against learning-based attacks with insufficient shares.

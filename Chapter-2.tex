@@ -21,7 +21,7 @@ The results demonstrate that the scheme is fundamentally insecure in spite of po
 % ------------------------------------------------------------
 \section{Preliminaries}
 % ------------------------------------------------------------
-This section introduces the foundational concepts and theoretical background required to understand the log-based anomaly detection methodology developed in this work. Each concept is explained from first principles before the formal mathematical notation is presented. The three main areas covered are: log representation and anomaly formulation, token embedding and representation learning, and the self-attention mechanism.
+This section introduces the foundational concepts and theoretical background required to analyse the security and cryptanalytic weaknesses of chaos-based image encryption schemes considered in this chapter. It formalises the mathematical models of chaotic maps, the permutation–diffusion structure, and the chosen-plaintext attack framework that are directly used in the subsequent cryptanalysis.
 
 \subsection{Chaos-Based Image Encryption}
 
@@ -77,7 +77,7 @@ where $\theta \in (0, 1)$ is a coupling parameter that governs the balance betwe
 \subsection{Cryptanalysis of Image Encryption Schemes}
 % ------------------------------------------------------------
 
-\textbf{Cryptanalysis} is the science of analysing encryption schemes to identify weaknesses that allow an adversary to recover plaintext or the secret key without legitimate authorisation. In the context of image encryption, successful cryptanalysis corresponds to recovering the original image from its encrypted form. Different attack models assume varying levels of adversary capability, and this work focuses on the strongest standard model used in symmetric cryptography.
+\textbf{Cryptanalysis} is the science of analysing encryption schemes to identify weaknesses that allow an adversary to recover plaintext or the secret key without legitimate authorisation. In the context of image encryption, successful cryptanalysis corresponds to recovering the original image from its encrypted form. Different attack models assume varying levels of adversary capability, and this chapter focuses on the strongest standard model used in symmetric cryptography.
 
 A \textbf{Chosen-Plaintext Attack (CPA)} assumes that the adversary has access to an encryption oracle that returns ciphertext $C = \mathcal{E}(P)$ for any selected plaintext image $P$. This allows the adversary to choose inputs strategically in order to extract information about the secret key or the internal structure of the cipher. Under modern cryptographic standards, any scheme that fails to resist CPA is considered insecure.
 

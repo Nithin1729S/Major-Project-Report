@@ -199,7 +199,7 @@ This research explores various optimized secret image sharing (SIS) schemes with
  
 As part of this chapter, we implemented the methodology proposed in the paper ``Secret Image Sharing with Smaller Shadow Images'' by Ran-Zan Wang and Chin-Hui Su (\textit{Pattern Recognition Letters}, 2006)~\cite{wang2006secret}.
  
-The paper addresses the problem of protecting sensitive images by dividing them into multiple shadow images, such that the original image can only be reconstructed when a threshold number of these shadow images are combined. This approach offers higher fault tolerance and security compared to traditional centralized storage mechanisms such as encryption or steganography. In this work, we reproduced and implemented the key stages of the proposed system, which are as follows:
+The paper addresses the problem of protecting sensitive images by dividing them into multiple shadow images, such that the original image can only be reconstructed when a threshold number of these shadow images are combined. This approach offers higher fault tolerance and security compared to traditional centralized storage mechanisms such as encryption or steganography. In this chapter, we reproduced and implemented the key stages of the proposed system, which are as follows:
  
 \begin{enumerate}
     \item \textbf{Image Differencing:} The secret image represented as a $t$-bit $SE = \{se_{ij}\}$, where $1 \leq i \leq m$ and $1 \leq j \leq n$ is converted to a difference image $DIFF = \{diff_{ij}\}$ of $SE$ according to the equation below:
@@ -415,7 +415,7 @@ The results of autoencoders-based SIS include focus on the shares size reduction
  
 \subsection{Experimental Results of Base Paper Implementation}
  
-The experimental evaluation of the base paper, \textbf{Secret Image Sharing with Smaller Shadow Images} (SIS), was carried out to serve as a baseline to compare the results of the optimization techniques explored in this work. Table~\ref{tab:baseline} presents the results obtained from the implementation. It lists the Huffman table entries for each unique pixel difference value, the size of each generated shadow image, and the combined shadow size, that is, the total storage required for the four generated shadow images.
+The experimental evaluation of the base paper, \textbf{Secret Image Sharing with Smaller Shadow Images} (SIS), was carried out to serve as a baseline to compare the results of the optimization techniques explored in this chapter. Table~\ref{tab:baseline} presents the results obtained from the implementation. It lists the Huffman table entries for each unique pixel difference value, the size of each generated shadow image, and the combined shadow size, that is, the total storage required for the four generated shadow images.
  
 \begin{table}[H]
 \centering
