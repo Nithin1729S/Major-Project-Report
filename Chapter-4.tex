@@ -490,7 +490,7 @@ We have validated our proposed approach using n = 4 shadows, and we have created
 
 \subsection{Storage Efficiency Analysis}
 
-Table 1 presents a comparative analysis of storage requirements between our approach and a conventional XOR-based (4, 4) scheme without pooling.
+Table~\ref{tab:storage_analysis} presents a comparative analysis of storage requirements between our approach and a conventional XOR-based (4, 4) scheme without pooling.
 
 \begin{table}[h!]
 \centering
@@ -520,7 +520,7 @@ Total Storage (4 shares) & 262,144 \\ \hline
 
 \subsection{Reconstruction Quality}
 
-Perfect lossless reconstruction was obtained in all experiments. Table 2 shows the quality measures for each test image. The infinite PSNR value and SSIM of 1.0 indicate that the reconstructed images are pixel-perfect copies of the original secret images with no loss of information.
+Perfect lossless reconstruction was obtained in all experiments. Table~\ref{tab:quality_metrics} shows the quality measures for each test image. The infinite PSNR value and SSIM of 1.0 indicate that the reconstructed images are pixel-perfect copies of the original secret images with no loss of information.
 
 \begin{table}[h!]
 \centering
@@ -540,7 +540,7 @@ Bridge & $\infty$ & 1.0000 \\ \hline
 
 \subsection{Security Validation}
 
-We calculated the Structural Similarity Index (SSIM) among various components to check the security of the residual permutation. Table 3 presents the security analysis of the Cameraman image. The most important points to note are:
+We calculated the Structural Similarity Index (SSIM) among various components to check the security of the residual permutation. Table~\ref{tab:security_validation} presents the security analysis of the Cameraman image. The most important points to note are:
 
 \begin{itemize}
 \item The unpermuted residuals are highly similar (SSIM $\approx$ 0.79--0.85) to the combined image, which may lead to leakage of information.
@@ -577,7 +577,7 @@ All operations are linear in image size, ensuring efficiency for real-world appl
 
 \subsection{Visual Results}
 
-Figure 2 shows the standard benchmark image used in our experiments. The Cameraman image is suitable for testing the effectiveness of the proposed method because of the presence of both smooth and textured areas.
+Figure~\ref{fig:test_image_cameraman} shows the standard benchmark image used in our experiments. The Cameraman image is suitable for testing the effectiveness of the proposed method because of the presence of both smooth and textured areas.
 
 \begin{figure}[H]
 \centering
@@ -586,7 +586,7 @@ Figure 2 shows the standard benchmark image used in our experiments. The Cameram
 \label{fig:test_image_cameraman}
 \end{figure}
 
-Figure 3 shows the overall process of our proposed XOR-based technique with pooling and permutation for the Cameraman image. The figure clearly shows the transition from the original secret image to the four shadow images after the creation of residuals and permutation. The shadow images, which look like noise, ensure that there is no leakage of information about the secret image. The noise nature of the permuted residuals proves that the permutation technique is effective in removing structural information.
+Figure~\ref{fig:xor_full_pipeline} shows the overall process of our proposed XOR-based technique with pooling and permutation for the Cameraman image. The figure clearly shows the transition from the original secret image to the four shadow images after the creation of residuals and permutation. The shadow images, which look like noise, ensure that there is no leakage of information about the secret image. The noise nature of the permuted residuals proves that the permutation technique is effective in removing structural information.
 
 \begin{figure}[H]
 \centering
@@ -626,7 +626,7 @@ Figure 3 shows the overall process of our proposed XOR-based technique with pool
 \label{fig:xor_full_pipeline}
 \end{figure}
 
-Moreover, Figure 4 illustrates the reconstruction attempts with only three out of the four shares and two out of the four shares on the Cameraman test image. The reconstructed images are obviously noisy and do not have any resemblance to the original hidden image. This verifies that our scheme satisfies the basic requirement of SIS, which is that no information is revealed with less than the threshold number of shares.
+Moreover, Figure~\ref{fig:cameraman_reconstruction_comparison} illustrates the reconstruction attempts with only three out of the four shares and two out of the four shares on the Cameraman test image. The reconstructed images are obviously noisy and do not have any resemblance to the original hidden image. This verifies that our scheme satisfies the basic requirement of SIS, which is that no information is revealed with less than the threshold number of shares.
 
 \begin{figure}[H]
 \centering
@@ -677,7 +677,7 @@ We analyzed the storage requirements for n = 2 to 10 to determine the scalabilit
 
 Our scheme decomposes the image into a pooled image reduced by a factor of two and a residual matrix. Although the residual matrix is stored separately, the pooled image is shared by all participants. The storage analysis does not include the residual matrix in the total storage computation.
 
-Thus, the total storage is comprised entirely of all pooled shares. This corresponds to a 75% reduction in storage over the storage required for n complete copies of the original image. Table 4 below summarizes the total storage computation for various values of n.
+Thus, the total storage is comprised entirely of all pooled shares. This corresponds to a 75% reduction in storage over the storage required for n complete copies of the original image. Table~\ref{tab:storage_varying_n} below summarizes the total storage computation for various values of n.
 
 \begin{table}[H]
 \centering
@@ -685,7 +685,7 @@ Thus, the total storage is comprised entirely of all pooled shares. This corresp
 \setlength{\tabcolsep}{6pt} 
 \renewcommand{\arraystretch}{0.9}
 \caption{Total storage requirements for different number of shares ($n$), excluding the residual matrix.}
-\label{tab:storage_analysis}
+\label{tab:storage_varying_n}
 \begin{tabular}{|r|r|r|r|r|r|r|}
 \hline
 \textbf{$n$} & \textbf{Original (B)} & \textbf{Pooled (B)} & \textbf{Per Share (B)} & \textbf{Total (B)} & \textbf{Naive Total (B)} & \textbf{Reduction (\%)} \\
@@ -710,13 +710,13 @@ Thus, the total storage is comprised entirely of all pooled shares. This corresp
 \label{fig:storage_plot}
 \end{figure}
 
-For example, when n = 4, the contribution of each of the four pooled shares to the storage is 262,144 bytes. On the other hand, the naive approach of full-image sharing would have resulted in the storage of 1,048,576 bytes, resulting in a 75\% reduction.
+For example, when n = 4, the contribution of each of the four pooled shares to the storage is 262,144 bytes. On the other hand, the naive approach of full-image sharing would have resulted in the storage of 1,048,576 bytes, resulting in a 75\% reduction. Figure~\ref{fig:storage_plot} plots the storage comparison graphically for varying numbers of shares.
 
 In general, the results clearly show that the secure pooling-based approach maintains perfect reconstruction with substantial storage savings. The storage savings are constant at 75\% for any value of n, clearly indicating the efficiency of the pooled shares in storage.
 
 \subsection{Comparison with Existing XOR-Based Methods}
 
-The performance of the proposed pooling-based XOR SIS approach is compared with other existing XOR-based methods reported in the literature. The comparison is highlighted in Table 5.
+The performance of the proposed pooling-based XOR SIS approach is compared with other existing XOR-based methods reported in the literature. The comparison is highlighted in Table~\ref{tab:xor_comparison}.
 
 \begin{table*}[htbp]
 \centering

@@ -47,7 +47,7 @@ The information-theoretic security guarantee above assumes that shares are analy
 % ─────────────────────────────────────────────────────────────────────────────
 
 
-An \textbf{autoencoder} is a neural network trained to reproduce its own input at the output. At first glance this seems trivial — why train a network to copy an input? The key insight is that the network is forced to pass the information through a \textbf{bottleneck}: a hidden layer with far fewer dimensions than the input. To reconstruct the input faithfully despite this bottleneck, the network is forced to learn a \emph{compact, meaningful representation} of the data.
+An \textbf{autoencoder} is a neural network trained to reproduce its own input at the output. At first glance this seems trivial — why train a network to copy an input? The key insight is that the network is forced to pass the information through a \textbf{bottleneck}: a hidden layer with far fewer dimensions than the input. To reconstruct the input faithfully despite this bottleneck, the network is forced to learn a \emph{compact, meaningful representation} of the data. Figure~\ref{fig:autoencoder_flow} illustrates the high-level encoder–bottleneck–decoder structure.
 
 \begin{figure}[h]
 \centering
@@ -55,6 +55,7 @@ An \textbf{autoencoder} is a neural network trained to reproduce its own input a
 \centering
 \texttt{Input $\xrightarrow{\text{Encoder}}$ Latent Code $\xrightarrow{\text{Decoder}}$ Reconstructed Output}
 \end{minipage}
+\label{fig:autoencoder_flow}
 \end{figure}
 
 
@@ -138,6 +139,7 @@ According to traditional cryptographic theory~\cite{shannon1949communication},
 a combination of shares that is less than four shares will lack the sufficient
 information required to reconstruct the secret image. All shares are dynamically
 generated during training to avoid memorization.
+Figure~\ref{fig:xor_attack_pipeline} illustrates the complete attack pipeline used in this work.
 
 \begin{figure}[htbp]
 \centering
@@ -429,6 +431,7 @@ The decoder model was then trained only on subsets consisting of three sequentia
 shares; specifically, shares $\{1,2,3\}$ and $\{2,3,4\}$ to investigate whether a model optimized
 for the small input scenario could identify patterns that would circumvent the security barrier.
 Figures~\ref{fig:all_results}(e) and~\ref{fig:all_results}(f) present the visualizations of results for digit ``7''.
+Tables~\ref{tab:xor123} and~\ref{tab:xor234} quantify the reconstruction performance for shares $\{1,2,3\}$ and $\{2,3,4\}$, respectively.
 
 
 \begin{table}[htbp]

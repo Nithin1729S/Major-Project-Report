@@ -262,7 +262,8 @@ optimal chaotic domain of the 2D-LSCM.
 Let $P \in \{0,\ldots,255\}^{M \times N \times 3}$ be a plain colour
 image of height $M$ and width $N$.
 MMCBIE applies three successive transformation stages to produce the
-cipher image $C$.
+cipher image $C$. Figure~\ref{fig:mmcbie_flow} depicts the complete
+encryption pipeline.
 
 \begin{figure}[t]
 \centering
@@ -454,6 +455,7 @@ flattened row-major position $k \in \{0, \ldots, N-1\}$, where $N = n^2$, and
 write $P_c[k]$ for colour channel $c \in \{R, G, B\}$. All arithmetic is
 modulo 256 unless stated otherwise; we denote this ring by $\mathbb{Z}_{256}$.
 The exclusive-OR operation on $\mathbb{Z}_{256}$ is written $\oplus$.
+Figure~\ref{fig:cpa_mmcbie} shows the proposed chosen-plaintext attack flow for MMCBIE.
 
 \begin{figure}[t]
 \centering
@@ -661,6 +663,7 @@ plaintext recovery without any knowledge of the secret key.
 
 The attacker stores $256$ probe ciphertexts of size $N \times 3$ bytes each,
 for a total of $\mathcal{O}(256 \cdot N) = \mathcal{O}(N)$ memory.
+Table~\ref{tab:complexity_mmcbie} compares the attack complexity against the MMCBIE encryption cost.
 
 
 \begin{algorithm}[t]
@@ -743,7 +746,7 @@ The values served only to create an oracle; at no time during the attack did the
 \subsection{Phase 1: Construction of the Probe Lookup Table}
 \label{subsec:exp_phase1}
 
-For each candidate plaintext value $v \in \{0, 1, \ldots, 255\}$, a spatially uniform probe image $\mathbf{v}$ was constructed in which every pixel of every channel was set to $v$. Each probe was submitted to the oracle, yielding the ciphertext response $C^{(v)} = \mathcal{E}(\mathbf{v})$. As the Hénon and logistic chaos streams do not depend on the plaintext input at all, the ciphertext output $C^{(v)}$ for each pixel location $k$ is uniquely determined by $v$ and the key streams alone. Collectively, the 256 images yield a lookup table for each pixel location $k$ and each channel, mapping the 256 different plaintext values to their corresponding ciphertexts. This step precisely utilized 256 oracle queries without needing any information about the secret key.
+For each candidate plaintext value $v \in \{0, 1, \ldots, 255\}$, a spatially uniform probe image $\mathbf{v}$ was constructed in which every pixel of every channel was set to $v$. Each probe was submitted to the oracle, yielding the ciphertext response $C^{(v)} = \mathcal{E}(\mathbf{v})$. As the Hénon and logistic chaos streams do not depend on the plaintext input at all, the ciphertext output $C^{(v)}$ for each pixel location $k$ is uniquely determined by $v$ and the key streams alone. Collectively, the 256 images yield a lookup table for each pixel location $k$ and each channel, mapping the 256 different plaintext values to their corresponding ciphertexts. This step precisely utilized 256 oracle queries without needing any information about the secret key. Table~\ref{tab:phase1_results} summarizes the lookup table construction metrics.
 
 
 \begin{table}[t]
@@ -773,7 +776,7 @@ For the provided ciphertext $C^*$ and the lookup table created during Phase~1, t
   \hat{P}_R[k] &= v \quad \text{such that} \quad C^{(v)}_B[k] = C^*_B[k]. \label{eq:match_r}
 \end{align}
 
-Because the function for the encryption of each pixel is a bijection from $\mathbb{Z}_{256}$ to itself, exactly one $v$ will fit each match criteria, ensuring uniqueness and correctness at every pixel and channel level. This step involved no more oracle calls, operating in time $\mathcal{O}(256 \cdot N)$.
+Because the function for the encryption of each pixel is a bijection from $\mathbb{Z}_{256}$ to itself, exactly one $v$ will fit each match criteria, ensuring uniqueness and correctness at every pixel and channel level. This step involved no more oracle calls, operating in time $\mathcal{O}(256 \cdot N)$. Table~\ref{tab:phase2_results} reports the pixel-wise recovery metrics.
 
 
 \begin{table}[t]
@@ -795,7 +798,7 @@ Key knowledge required                                       & None \\
 \subsection{Full Decryption Without the Secret Key}
 \label{subsec:exp_phase3}
 
-The image reconstruction process, $\hat{P}$, consisted of simply arranging the channel matches produced in Phase~2. No part of the real secret key, namely the Hénon parameters, the logistic map parameters, or even any information regarding intermediate cipher states were involved at any stage.
+The image reconstruction process, $\hat{P}$, consisted of simply arranging the channel matches produced in Phase~2. No part of the real secret key, namely the Hénon parameters, the logistic map parameters, or even any information regarding intermediate cipher states were involved at any stage. Table~\ref{tab:phase3_results} reports the CPA decryption accuracy metrics.
 
 
 \begin{table}[t]
@@ -836,7 +839,7 @@ Phase & Goal & Oracle calls & Items recovered & Perfect match \\
 \end{tabular}
 }
 \end{table}
-\noindent It is evident from the outcomes that an image encrypted by MMCBIE is possible to recover completely through just $256$ queries of the oracle, regardless of the image's size. Therefore, MMCBIE is \emph{entirely insecure} in the CPA model even considering that it uses a $512$ bit-long key. As the following analysis proves, good results for NPCR, UACI, and Entropy do not mean cryptographic security~\cite{wen2023cryptanalysis}.
+\noindent It is evident from the outcomes that an image encrypted by MMCBIE is possible to recover completely through just $256$ queries of the oracle, regardless of the image's size. Therefore, MMCBIE is \emph{entirely insecure} in the CPA model even considering that it uses a $512$ bit-long key. Table~\ref{tab:attack_summary} consolidates the complete attack statistics across all phases. Figure~\ref{fig:mmcbie_cpa_result} visually confirms the pixel-perfect recovery achieved by the attack. As the following analysis proves, good results for NPCR, UACI, and Entropy do not mean cryptographic security~\cite{wen2023cryptanalysis}.
 
 \begin{figure}[t]
     \centering
@@ -858,6 +861,7 @@ Phase & Goal & Oracle calls & Items recovered & Perfect match \\
         \caption{CPA Decrypted}
     \end{subfigure}
     \caption{Comparison of original, encrypted, and CPA-decrypted images. The decrypted image is pixel-identical to the original.}
+    \label{fig:mmcbie_cpa_result}
 \end{figure}
 
 

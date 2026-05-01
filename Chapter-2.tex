@@ -162,7 +162,7 @@ T_i + E_{i-1} + E_{i-2} + X_i \bmod F, & i \geq 3,
 \end{cases}
 \label{eq:diffusion_enc}
 \end{equation}
-where $F = 255$ for 8-bit imagery and $X_i = \lfloor x_i \times 2^{32} \rfloor$ is the $i$-th element of the scaled chaotic sequence. The recursive dependence on $E_{i-1}$ and $E_{i-2}$ establishes an inter-pixel dependency chain that ensures downstream propagation of any modification. The complete permutation-diffusion cycle is applied for two rounds to yield the final ciphertext $C$.
+where $F = 255$ for 8-bit imagery and $X_i = \lfloor x_i \times 2^{32} \rfloor$ is the $i$-th element of the scaled chaotic sequence. The recursive dependence on $E_{i-1}$ and $E_{i-2}$ establishes an inter-pixel dependency chain that ensures downstream propagation of any modification. The complete permutation-diffusion cycle is applied for two rounds to yield the final ciphertext $C$. Figure~\ref{fig:enc_process} illustrates the full encryption process of the target scheme.
 
 \begin{figure}[H]
 \centering
@@ -173,6 +173,8 @@ where $F = 255$ for 8-bit imagery and $X_i = \lfloor x_i \times 2^{32} \rfloor$ 
 
 % -----------------------------------------------------------------------
 \subsection{Chosen-Plaintext Attack Framework}
+
+The overall attack framework is shown in Figure~\ref{fig:cpa}, comprising three phases: keystream extraction, permutation map reconstruction, and full decryption of any target ciphertext.
 
 \begin{figure}[t]
 \centering
