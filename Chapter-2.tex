@@ -53,23 +53,23 @@ Together, permutation provides \emph{confusion} and diffusion provides \emph{spr
 
 
 \textbf{Arnold's Cat Map} is a classical area-preserving chaotic map widely used for pixel permutation in image encryption. For an image of size $n \times n$, it maps each pixel at position $(x,\, y)$ to a new position $(x',\, y')$ according to:
-\[
+\begin{equation}
 \begin{pmatrix} x' \\ y' \end{pmatrix}
 =
 \begin{pmatrix} 1 & 1 \\ 1 & 2 \end{pmatrix}
 \begin{pmatrix} x \\ y \end{pmatrix}
 \bmod\; n.
-\]
+\end{equation}
 Each application of this map shuffles pixel positions in a deterministic yet seemingly random manner. Importantly, the map is \textit{periodic}: after a finite number of iterations, the image returns to its original configuration. This periodicity property is exploited both in the encryption process and in certain cryptanalytic attacks.
 
 
 The \textbf{Two-Dimensional Logistic Sine Coupling Map (2D-LSCM)} is a higher-dimensional chaotic system designed to overcome the limited chaotic range and non-uniform distribution of simple one-dimensional maps. It generates two mutually coupled chaotic sequences $\{x_i\}$ and $\{y_i\}$ via the following recurrence relations:
-\[
+\begin{equation}
 \begin{cases}
 x_{i+1} = \sin\!\Bigl(\pi\bigl(4\theta\, x_i(1 - x_i) + (1 - \theta)\sin(\pi y_i)\bigr)\Bigr) \\[6pt]
 y_{i+1} = \sin\!\Bigl(\pi\bigl(4\theta\, y_i(1 - y_i) + (1 - \theta)\sin(\pi x_{i+1})\bigr)\Bigr)
 \end{cases}
-\]
+\end{equation}
 where $\theta \in (0, 1)$ is a coupling parameter that governs the balance between the logistic and sine components. The coupling between the two sequences produces a wider and more uniform chaotic range than either component alone. The output sequences serve as keystreams for both the permutation and diffusion phases of the encryption scheme.
 
 

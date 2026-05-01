@@ -736,11 +736,13 @@ The oracle was configured with the following fixed key, withheld from the attack
     \label{eq:exp_key}
 \end{equation}
 together with the 192-bit key-mixing subkey $MK = \{MK_R, MK_G, MK_B\}$:
-\begin{align*}
-  MK_R &= [12, 34, 56, 78, 90, 11, 22, 33],\\
-  MK_G &= [44, 55, 66, 77, 88, 99, 10, 21],\\
-  MK_B &= [31, 42, 53, 64, 75, 86, 97, 18].
-\end{align*}
+\begin{equation}
+\begin{aligned}
+MK_R &= [12, 34, 56, 78, 90, 11, 22, 33],\\
+MK_G &= [44, 55, 66, 77, 88, 99, 10, 21],\\
+MK_B &= [31, 42, 53, 64, 75, 86, 97, 18].
+\end{aligned}
+\end{equation}
 The values served only to create an oracle; at no time during the attack did the attack require information on any of the aforementioned parameters.  The cipher image $C = \mathcal{E}(P)$ reated using the above parameters does not appear visually similar to the plaintext, as expected for the scheme’s confusion/diffusion features.
 
 \subsection{Phase 1: Construction of the Probe Lookup Table}

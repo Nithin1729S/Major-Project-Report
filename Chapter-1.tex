@@ -39,18 +39,19 @@ When a system is behaving normally, its logs follow recognizable, repetitive pat
 
 
 Formally, each log message $m$ is treated as a sequence of tokens (words or sub-word units):
-\[
+\begin{equation}
 m = \{\, w_1,\, w_2,\, \dots,\, w_T \,\}
-\]
+\end{equation}
 where $T$ is the number of tokens in the message and $w_i$ denotes the $i^{\text{th}}$ token. A \textbf{log sequence} $S$ is a collection of $L$ consecutive log messages observed within a fixed time window:
-\[
+\begin{equation}
 S = \{\, m_1,\, m_2,\, \dots,\, m_L \,\}
-\]
+\end{equation}
 
 The anomaly detection task is formulated as a \textbf{binary classification} problem. Given a sequence $S$, a detection function $f$ must assign it a label:
-\[
+\begin{equation}
 f(S) \;\longrightarrow\; \{0,\,1\}
-\]
+\end{equation}
+
 where $0$ denotes \emph{normal} behavior and $1$ denotes \emph{anomalous} behavior. The goal is to \emph{learn} $f$ from historical labeled data such that it generalizes reliably to unseen log sequences.
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -61,13 +62,13 @@ where $0$ denotes \emph{normal} behavior and $1$ denotes \emph{anomalous} behavi
 Machine learning models operate on numerical inputs, not raw text. An \textbf{embedding} is a mapping from each word or token to a dense numerical vector, constructed such that tokens with similar meanings are positioned close together in the resulting vector space. For instance, the tokens \texttt{``error''} and \texttt{``failure''} would ideally have similar vector representations, whereas \texttt{``error''} and \texttt{``timestamp''} would be far apart. This geometric structure allows downstream models to reason about semantic similarity without explicit symbolic rules.
 
 Each token $w_i$ is mapped to a continuous vector:
-\[
+\begin{equation}
 e_i = \operatorname{Embed}(w_i) \;\in\; \mathbb{R}^d
-\]
+\end{equation}
 where $d$ is the \textbf{embedding dimension} — a hyperparameter typically set to 128 or 256. The full log message is then represented as the ordered sequence of its token vectors:
-\[
+\begin{equation}
 M = \{\, e_1,\, e_2,\, \dots,\, e_T \,\}
-\]
+\end{equation}
 
 
 Log messages possess a rich internal structure. Within a single message, different tokens serve distinct functional \emph{roles}: some are status keywords (e.g., \texttt{INFO}, \texttt{ERROR}), others are entity identifiers (e.g., a process ID or a username), and still others carry numeric values (e.g., a port number or a memory address). \textbf{Role-aware modeling} explicitly encodes these structural roles alongside token content during the embedding process. By preserving role distinctions rather than treating all tokens uniformly, the model learns richer and more discriminative representations — a property that is especially valuable for detecting subtle anomalies in log sequences.
@@ -92,22 +93,22 @@ Intuitively, the query of token $i$ is matched against the keys of all other tok
 
 
 The raw attention score between token $i$ and token $j$ is computed as the dot product of their query and key vectors, scaled by $\sqrt{d}$ to stabilize gradients in high-dimensional settings:
-\[
+\begin{equation}
 \operatorname{Attention}(i,j) = \frac{Q_i\, K_j^{\top}}{\sqrt{d}}
-\]
+\end{equation}
 
 These raw scores are then normalized across all tokens using the \textbf{softmax} function to produce a probability distribution of attention weights:
-\[
+\begin{equation}
 \alpha_{ij} = \frac{\exp\!\bigl(\operatorname{Attention}(i,j)\bigr)}{\displaystyle\sum_{k=1}^{T} \exp\!\bigl(\operatorname{Attention}(i,k)\bigr)}
-\]
+\end{equation}
 
 By construction, $\alpha_{ij} \geq 0$ and $\sum_{j=1}^{T} \alpha_{ij} = 1$, so the weights form a valid probability distribution over the sequence.
 
 
 The final representation of token $i$ is computed as a weighted sum of all value vectors, with tokens receiving higher attention weights contributing proportionally more:
-\[
+\begin{equation}
 z_i = \sum_{j=1}^{T} \alpha_{ij}\, V_j
-\]
+\end{equation}
 
 The vector $z_i$ is referred to as the \textbf{contextual representation} of token $i$, because it aggregates information from the entire sequence in a relevance-weighted manner. This is fundamentally different from a static embedding, which encodes only the identity of a token without any awareness of its surrounding context. In the log anomaly detection setting, contextual representations allow the model to capture inter-token dependencies that are critical for distinguishing normal log patterns from anomalous ones.
 % ─────────────────────────────────────────────────────────────────────────────
@@ -214,9 +215,9 @@ Unlike NeuralLog~\cite{neurallog2021}, which discards all numeric tokens prior t
 % ─────────────────────────────────────────────────────────────────────────────
 
 Each preprocessed log message is tokenized using WordPiece tokenization~\cite{schuster2012japanese}, which decomposes rare or domain-specific terms into frequent subword units. This eliminates the out-of-vocabulary issues that commonly arise in technical log vocabularies when using fixed lexicons. Token embeddings are then generated using BERT-base~\cite{devlin2018bert} (12 transformer layers, 768 hidden dimensions), producing a sequence of contextual representations:
-\[
+\begin{equation}
 \mathbf{H} = [\,\mathbf{h}_1,\, \mathbf{h}_2,\, \ldots,\, \mathbf{h}_n\,]
-\]
+\end{equation}
 where each $\mathbf{h}_i \in \mathbb{R}^{768}$ encodes token $i$ in the full context of its surrounding message. Unlike static word embeddings, these contextual representations capture the meaning of each token as it appears within a specific log entry, making them sensitive to the varying semantics of recurring keywords such as \texttt{``failed''} or \texttt{``connection''} across different message contexts.
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -241,13 +242,13 @@ Critically, no manual annotation of token roles is required. The role assignment
 \subsubsection{Role Induction Network}
 
 For each token $t_i$ with BERT embedding $\mathbf{h}_i \in \mathbb{R}^{768}$, a two-layer feedforward network predicts a soft role probability distribution:
-\[
+\begin{equation}
 \mathbf{r}_i = \operatorname{softmax}\!\bigl(W_r \cdot \operatorname{ReLU}(W_h\, \mathbf{h}_i + b_h) + b_r\bigr)
-\]
+\end{equation}
 where $W_h \in \mathbb{R}^{256 \times 768}$ and $W_r \in \mathbb{R}^{5 \times 256}$ are learned weight matrices, and $\mathbf{r}_i \in \mathbb{R}^5$ is the resulting probability distribution over the five role categories. A role-aware token representation is then formed by modulating the BERT embedding with the predicted role information:
-\[
+\begin{equation}
 \mathbf{t}_i = \mathbf{h}_i \odot \mathbf{W}_e\, \mathbf{r}_i
-\]
+\end{equation}
 where $\mathbf{W}_e \in \mathbb{R}^{768 \times 5}$ is a learned role embedding matrix and $\odot$ denotes element-wise multiplication. Since the role induction network receives no explicit role supervision and is trained solely from the anomaly detection gradient signal, tokens that contribute similarly to anomaly detection automatically converge to similar role assignments during training.
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -255,13 +256,13 @@ where $\mathbf{W}_e \in \mathbb{R}^{768 \times 5}$ is a learned role embedding m
 % ─────────────────────────────────────────────────────────────────────────────
 
 Rather than uniformly averaging all token embeddings as in NeuralLog~\cite{neurallog2021}, the proposed framework constructs a structured message representation by performing separate pooling operations for each role category. The per-role pools are computed as soft weighted averages:
-\[
+\begin{equation}
 \mathbf{m}_k = \frac{\displaystyle\sum_{i=1}^{n} r_{i,k} \cdot \mathbf{t}_i}{\displaystyle\sum_{i=1}^{n} r_{i,k}}
-\]
+\end{equation}
 where $r_{i,k}$ is the probability that token $i$ belongs to role $k$. The five role-specific sub-vectors are then concatenated to form the final message representation:
-\[
+\begin{equation}
 \mathbf{m} = [\,\mathbf{m}_{\text{state}};\, \mathbf{m}_{\text{entity}};\, \mathbf{m}_{\text{action}};\, \mathbf{m}_{\text{quantity}};\, \mathbf{m}_{\text{location}}\,]
-\]
+\end{equation}
 The resulting message vector $\mathbf{m} \in \mathbb{R}^{3840}$ concatenates five role-specific sub-vectors of 768 dimensions each. This structured representation preserves the functional distinctions between different token types — distinctions that a single averaged vector would collapse — and thereby equips downstream models with richer, more interpretable inputs.
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -269,13 +270,13 @@ The resulting message vector $\mathbf{m} \in \mathbb{R}^{3840}$ concatenates fiv
 % ─────────────────────────────────────────────────────────────────────────────
 
 Log sequences are constructed using a sliding window of size 20 and step 1, following the evaluation protocol of NeuralLog~\cite{neurallog2021}. Sinusoidal positional encodings~\cite{vaswani2017attention} are added to each message representation to inject ordering information into the otherwise permutation-invariant transformer:
-\[
+\begin{equation}
 \mathbf{x}_i = \mathbf{m}_i + \mathbf{p}_i
-\]
+\end{equation}
 where $\mathbf{p}_i$ is the positional encoding vector for position $i$. A single-layer Transformer encoder with 12 attention heads and a feedforward dimension of 2048 is then applied over the full sequence to model temporal dependencies among log messages:
-\[
+\begin{equation}
 \mathbf{X}' = \operatorname{TransformerEncoder}(\mathbf{X})
-\]
+\end{equation}
 This enables the model to capture inter-message patterns — such as recurring sequences of warnings preceding a critical failure — that are invisible to methods operating on individual log messages in isolation.
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -283,14 +284,14 @@ This enables the model to capture inter-message patterns — such as recurring s
 % ─────────────────────────────────────────────────────────────────────────────
 
 A max-pooling operation is applied over the transformer sequence output to obtain a fixed-size sequence-level representation $\mathbf{s}$, which is passed through a fully connected layer followed by softmax to produce the final anomaly prediction:
-\[
+\begin{equation}
 P(\text{anomaly} \mid \mathbf{s}) = \operatorname{softmax}(W_c\, \mathbf{s} + b_c)
-\]
+\end{equation}
 
 The full framework is trained end-to-end using binary cross-entropy loss:
-\[
+\begin{equation}
 \mathcal{L} = -\sum_{j} \Bigl[\, y_j \log \hat{y}_j + (1 - y_j)\log(1 - \hat{y}_j) \,\Bigr]
-\]
+\end{equation}
 Training is performed using the AdamW optimizer with a learning rate of $3 \times 10^{-4}$, a batch size of 64, and a dropout rate of 0.1. Early stopping is applied after 5 consecutive epochs without validation improvement, with a maximum of 20 training epochs. Notably, sequence-level anomaly labels constitute the only supervision required; token-level role assignments emerge entirely through backpropagation without any auxiliary annotation effort.
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Results and Analysis}

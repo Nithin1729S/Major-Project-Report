@@ -1,8 +1,7 @@
 % ─────────────────────────────────────────────────────────────────────────────
 \chapter{Optimization Techniques for Secret Image Sharing Schemes}
 % ─────────────────────────────────────────────────────────────────────────────
-This chapter presents a comprehensive study of optimization techniques for secret image sharing schemes, focusing on reducing shadow image size while preserving security and lossless reconstruction. It reviews polynomial-based, XOR-based, and multi-secret sharing approaches, and introduces preprocessing strategies such as image differencing, Huffman coding, leading-zero removal, and digit decomposition to improve storage efficiency. The chapter also explores the integration of pooling-based methods and autoencoder-based frameworks for enhanced compression, followed by experimental evaluation demonstrating the trade-offs between compression, reconstruction quality, and computational efficiency across various schemes.
-
+This chapter presents a comprehensive study of optimization techniques for secret image sharing schemes, focusing on reducing shadow image size while preserving security and lossless reconstruction. It reviews polynomial-based, XOR-based, and multi-secret sharing approaches, and introduces preprocessing strategies such as image differencing, Huffman coding, leading-zero removal, and digit decomposition to improve storage efficiency. The chapter also explores the integration of pooling-based methods for enhanced compression, followed by experimental evaluation demonstrating the trade-offs between compression, reconstruction quality, and computational efficiency across various schemes.
 
 % ============================================================
 \section{Introduction}
@@ -17,11 +16,8 @@ The concept of secret sharing was first introduced independently by Shamir~\cite
  
 With the rapid growth of digital media and network-based communication, the need arose to adapt secret sharing techniques for images. To address this, Thien and Lin~\cite{thien2002secret} proposed the first Secret Image Sharing (SIS) scheme in 2002. Their method was directly based on Shamir's $(t, n)$ scheme and allowed an image to be split into $n$ shadow images such that any $t$ of them could perfectly reconstruct the original image. However, there was always a scope to minimize the size of the output images as much as possible. To overcome these limitations, Wang and Su~\cite{wang2006secret} introduced a novel SIS pipeline in 2006 that significantly reduced the storage size of shadow images. Their scheme incorporated image preprocessing steps, including an image differencing operation followed by Huffman coding, before applying the polynomial-based sharing mechanism. These enhancements successfully reduced the shadow image sizes by approximately 40\% compared to Thien and Lin's scheme.
  
-The XOR-based SIS approach is one of the most widely adopted and computationally efficient categories of Boolean-based SIS schemes. Despite its simplicity and efficiency, two major limitations persist in existing XOR-based schemes. The first concern the inability to effectively reduce the size of the generated shadow images, while the second pertains to the limited availability of flexible $(t, n)$ threshold constructions, as most existing methods are confined to $(n, n)$ configurations. To address the first limitation, we introduce a \textbf{lightweight image sharing framework based on average pooling and XOR-based shadow generation}. The second limitation is addressed by implementing the \textbf{Kabirirad--Eslami $(t, n)$ Multi-Secret Image Sharing Scheme}~\cite{kabirirad2018t}, along with approaches to optimize the size of shadow images.
- 
-With the rapid growth in deep learning, we explored the use of neural architectures to enhance traditional SIS frameworks. Due to the ability of autoencoders to learn compact and meaningful latent representations of images, while introducing drastic compression, we employed autoencoder-based approaches. In this chapter, an \textbf{autoencoder-based SIS scheme} was implemented, where the encoder compresses each image into a latent vector and divides it into multiple independent shares. The decoder then reconstructs the original image from these shares, ensuring a near-perfect recovery with minimal information loss. Unlike traditional polynomial or XOR-based schemes, the autoencoder approach significantly reduces the storage size of shares while maintaining high structural similarity (SSIM $\approx$ 0.99) and reconstruction quality (PSNR $>$ 40 dB). This demonstrates the potential of deep learning models in achieving secure, storage-efficient, and lossless secret image sharing.
- 
- 
+The XOR-based SIS approach is one of the most widely adopted and computationally efficient categories of Boolean-based SIS schemes. Despite its simplicity and efficiency, two major limitations persist in existing XOR-based schemes. The first concern the inability to effectively reduce the size of the generated shadow images, while the second pertains to the limited availability of flexible $(t, n)$ threshold constructions, as most existing methods are confined to $(n, n)$ configurations. To address the first limitation, we introduce a {lightweight image sharing framework based on average pooling and XOR-based shadow generation}. The second limitation is addressed by implementing the Kabirirad--Eslami $(t, n)$ Multi-Secret Image Sharing Scheme~\cite{kabirirad2018t}, along with approaches to optimize the size of shadow images.
+  
 Secret Image Sharing (SIS) is an important research problem due to the need to protect sensitive images from unauthorized access and distribution. With the increasing use of digital images in various applications, including social media, e-commerce, and entertainment, the need for secure and efficient methods of image sharing is becoming more critical. Sensitive images, such as medical images or scanned copies of government documents, images of military installations, satellite images, court evidence, etc., are prone to illegal access, tampering, and distribution.
  
 Although existing methods implement the scheme efficiently, there is always a scope to improve the efficiency of storage by minimizing the size of the share images. In addressing this challenge of reducing the size of the generated share images, it is also necessary not to compromise security and image quality. This creates an open space for further advancements in SIS algorithms that focus on generating smaller, storage-efficient shadow images and enhancing storage optimization while maintaining robust security of the secret.
@@ -39,9 +35,9 @@ We consider the problem of approximating a given function by a class of simpler 
 A polynomial $p(x)$ is called an interpolating polynomial if the value of $p(x)$ and/or its certain order derivatives coincides with those of $f(x)$ and/or its same order derivatives at one or more tabular points.
  
 In general, if there are $N + 1$ distinct points:
-\[
+\begin{equation}
 a = x_0 < x_1 < x_2 < \cdots < x_n = b
-\]
+\end{equation}
 Then the problem of interpolation is to obtain $p(x)$ satisfying the conditions:
 \begin{equation}
     p(x_i) = f(x_i), \quad i = 0, 1, 2, \ldots, n
@@ -90,9 +86,9 @@ Once the tree is constructed, binary codes are assigned by traversing the tree:
 \subsubsection{Average Code Length}
  
 The effectiveness of Huffman coding can be measured by the average codeword length, which is calculated using the formula:
-\[
+\begin{equation}
 L_{avg} = \frac{1}{f(T)} \sum_{i=1}^{n} d(i) \cdot f(i)
-\]
+\end{equation}
 where:
 \begin{itemize}
     \item $n$ is the number of characters,
@@ -116,7 +112,9 @@ A Galois Field (GF), also known as a finite field, is a field with a finite numb
 \textbf{Key Properties:}
 \begin{enumerate}
     \item For every finite field $\mathbb{F}_q$, each element $a \in \mathbb{F}_q$ satisfies:
-    \[ a^q = a \]
+    \begin{equation}
+a^q = a
+\end{equation}
     \item The non-zero elements of a finite field form a multiplicative group of order $q - 1$.
     \item Every finite field of order $p^n$ is isomorphic to the splitting field of the polynomial $x^q - x$ over $\mathbb{F}_p$.
 \end{enumerate}
@@ -195,7 +193,7 @@ Few studies have addressed the limitation of large shadow image sizes in XOR-bas
 \section{Work Done}
 % ============================================================
  
-This research explores various optimized secret image sharing (SIS) schemes with the aim of developing a methodology to reduce the size of shadow images. To achieve this, we initially implemented the classical polynomial-based scheme and the XOR-based scheme to gain a comprehensive understanding of their concepts and mechanisms. Building on this foundation, we introduce preprocessing steps that effectively reduce the net storage space, while maintaining the property of lossless reconstruction of the secret image. A deep learning approach based on autoencoders owing to their ability to compress images is also discussed.
+This research explores various optimized secret image sharing (SIS) schemes with the aim of developing a methodology to reduce the size of shadow images. To achieve this, we initially implemented the classical polynomial-based scheme and the XOR-based scheme to gain a comprehensive understanding of their concepts and mechanisms. Building on this foundation, we introduce preprocessing steps that effectively reduce the net storage space, while maintaining the property of lossless reconstruction of the secret image.
  
 \subsection{Implementation of Polynomial-based SIS with Smaller Shadow Images}
  
@@ -309,20 +307,20 @@ In an 8-bit grayscale image, each pixel has an intensity value between 0 and 255
 The preprocessing pipeline works as follows:
 \begin{enumerate}
     \item \textbf{Splitting into Digit Matrices:} Each pixel $P$ is decomposed as:
-    \[
-        H = \lfloor P / 100 \rfloor, \quad T = \lfloor (P / 10) \bmod 10 \rfloor, \quad O = P \bmod 10
-    \]
+    \begin{equation}
+H = \lfloor P / 100 \rfloor, \quad T = \lfloor (P / 10) \bmod 10 \rfloor, \quad O = P \bmod 10
+\end{equation}
     \textit{Example:} $P = 247 \Rightarrow H = 2, T = 4, O = 7$
  
     \item \textbf{Conversion to Bitstreams:} Each digit matrix is flattened and converted to binary without padding, generating three separate bitstreams:
-    \[
-        H_{\text{stream}}, \quad T_{\text{stream}}, \quad O_{\text{stream}}
-    \]
+    \begin{equation}
+H_{\text{stream}}, \quad T_{\text{stream}}, \quad O_{\text{stream}}
+\end{equation}
  
     \item \textbf{Ultimate Bitstream Formation:} These streams are concatenated to form a single ultimate bitstream:
-    \[
-        U = H_{\text{stream}} \| T_{\text{stream}} \| O_{\text{stream}}
-    \]
+    \begin{equation}
+U = H_{\text{stream}} \| T_{\text{stream}} \| O_{\text{stream}}
+\end{equation}
  
     \item \textbf{Reshaping into Matrix:} The ultimate bitstream is split into 8-bit chunks and converted to integers (0--255). These values are reshaped into the smallest square matrix possible, which serves as the input for the sharing phase.
  

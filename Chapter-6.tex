@@ -123,9 +123,9 @@ The encoder processes an input image of size $128 \times 128 \times 1$ and conve
     \item \textbf{Convolutional Downsampling:} Three convolutional layers with filters $(32, 64, 128)$ and stride 2 are used to reduce spatial dimensions and extract hierarchical features. Each layer uses ReLU activation followed by Batch Normalization.
 
     \item \textbf{Residual Blocks:} Residual connections are used to preserve features and stabilize training. Each block follows:
-    \[
-    \text{Output} = \text{ReLU}(x + F(x))
-    \]
+    \begin{equation}
+\text{Output} = \text{ReLU}(x + F(x))
+\end{equation}
     where $F(x)$ represents convolutional transformations.
 
     \item \textbf{Latent Representation:} The final feature maps are flattened and passed through a fully connected layer to produce a 1024-dimensional latent vector.
@@ -135,9 +135,9 @@ The encoder processes an input image of size $128 \times 128 \times 1$ and conve
 
 The latent vector is divided into four equal shares using a non-trainable splitting operation:
 
-\[
+\begin{equation}
 S_i = \text{latent}\left[(i-1)\frac{L}{4} : i\frac{L}{4}\right], \quad i = 1,2,3,4
-\]
+\end{equation}
 
 Each share is independent, and fewer than four shares do not provide sufficient information for reconstruction.
 
@@ -147,9 +147,9 @@ The decoder reconstructs the original image by combining all shares and reversin
 
 \begin{itemize}
     \item \textbf{Share Combination:} The shares are concatenated to reconstruct the latent vector:
-    \[
-    \text{latent}_{recon} = \text{concat}(S_1, S_2, S_3, S_4)
-    \]
+    \begin{equation}
+\text{latent}_{recon} = \text{concat}(S_1, S_2, S_3, S_4)
+\end{equation}
 
     \item \textbf{Feature Upsampling:} The latent vector is expanded into a $16 \times 16 \times 128$ feature map and upsampled using transposed convolution layers to restore spatial resolution.
 
@@ -162,9 +162,9 @@ The decoder reconstructs the original image by combining all shares and reversin
 
 The model is trained end-to-end using Mean Squared Error (MSE) loss:
 
-\[
+\begin{equation}
 L_{MSE} = \frac{1}{N} \sum_{i=1}^{N} (I_i - \hat{I}_i)^2
-\]
+\end{equation}
 
 where $I_i$ and $\hat{I}_i$ represent original and reconstructed pixel values. The network is optimized using the Adam optimizer with learning rate $\alpha = 10^{-3}$, batch size 32, and trained for 20 epochs.
 

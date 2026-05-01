@@ -33,34 +33,36 @@ where $R_{ij}$ captures the deviation between original pixel value $I_{ij}$ and 
 \subsection{XOR-Based Secret Sharing}
 
 The XOR operation has perfect diffusion, meaning that if one of the operands is random, the result is indistinguishable from random. We give a brief overview of the $(n,n)$ SIS scheme given by Wang et al.~\cite{wang2007}. The dealer $D$ creates $n-1$ random matrices for the $(n,n)$ threshold schemes:
-\[\{B_1, B_2, \dots, B_{n-1}\}\]
+\begin{equation}
+\{B_1, B_2, \dots, B_{n-1}\}
+\end{equation}
 Each of these matrices has the same dimensions as the secret image.
 
 The $n$ share images $\{SI_1, SI_2, \dots, SI_n\}$ are constructed sequentially through XOR operations:
-\[
+\begin{equation}
 SI_1 = B_1
-\]
-\[
+\end{equation}
+\begin{equation}
 SI_2 = B_1 \oplus B_2
-\]
-\[
+\end{equation}
+\begin{equation}
 SI_3 = B_2 \oplus B_3
-\]
-\[
+\end{equation}
+\begin{equation}
 \vdots
-\]
-\[
+\end{equation}
+\begin{equation}
 SI_{n-1} = B_{n-2} \oplus B_{n-1}
-\]
-\[
+\end{equation}
+\begin{equation}
 SI_n = B_{n-1} \oplus I_s
-\]
+\end{equation}
 where $\oplus$ denotes bitwise XOR.
 
 To reconstruct the original image, the combiner performs bitwise XOR across all $n$ share images:
-\[
+\begin{equation}
 I'_s = SI_1 \oplus SI_2 \oplus \dots \oplus SI_n
-\]
+\end{equation}
 
 
 \section{Literature Review}
@@ -145,19 +147,19 @@ Our system consists of three major stages: preprocessing by average pooling, sha
 \subsection{Phase 1: Average Pooling Preprocessing}
 
 The pooling operation divides the original grayscale image \(S \in \mathbb{R}^{N \times N}\) into non-overlapping blocks of size \(K \times K\). Let \(s\) be the stride (for non-overlapping blocks, usually \(s = K\)). For each block \((i,j)\), the pooled value \(P(i,j)\) is defined as the arithmetic mean of the \(K^2\) pixel values in that block:
-\[
+\begin{equation}
 P(i,j)\;=\;\frac{1}{K^2}\sum_{x=i\cdot s}^{(i+1)\cdot s-1}\sum_{y=j\cdot s}^{(j+1)\cdot s-1} S(x,y).
-\]
+\end{equation}
 
 The residual map \(R\in\mathbb{R}^{N\times N}\) captures per-pixel deviations from block averages:
-\[
+\begin{equation}
 R(x,y)\;=\;S(x,y)\;-\;P\Big(\Big\lfloor\frac{x}{s}\Big\rfloor,\Big\lfloor\frac{y}{s}\Big\rfloor\Big).
-\]
+\end{equation}
 
 Since \(R\) maintains identical spatial dimensions as \(S\), the original image can be reconstructed exactly (in exact arithmetic) by adding the block-wise broadcast of \(P\) to \(R\):
-\[
+\begin{equation}
 \widehat{S}(x,y)\;=\;P\Big(\Big\lfloor\frac{x}{s}\Big\rfloor,\Big\lfloor\frac{y}{s}\Big\rfloor\Big)\;+\;R(x,y).
-\]
+\end{equation}
 
 The pooling process is summarized in Algorithm~\ref{alg:avg_pooling}. This phase generates the following outputs:
 
@@ -197,7 +199,7 @@ $R \gets$ zero matrix of size $N \times N$
 \subsection*{Illustrative Example: $4\times4$ Image with $2\times2$ Pooling (Block Size $K=2$, Stride $s=2$)}
 
 Consider input image \(S\) as the \(4\times4\) matrix:
-\[
+\begin{equation}
 S =
 \begin{bmatrix}
 100 & 102 & 50 & 52 \\
@@ -205,89 +207,89 @@ S =
 200 & 202 & 150 & 151 \\
 198 & 199 & 149 & 152
 \end{bmatrix}.
-\]
+\end{equation}
 
 We partition \(S\) into four non-overlapping \(2\times2\) blocks. Computing block sums and means:
 
 \begin{itemize}
   \item Top-left block (index \((0,0)\)):
-    \[
-    B_{00} = \begin{bmatrix}100 & 102\\ 98 & 101\end{bmatrix},
+    \begin{equation}
+B_{00} = \begin{bmatrix}100 & 102\\ 98 & 101\end{bmatrix},
     \quad
     \text{sum}(B_{00})=401,
     \quad  
     P(0,0)=100.25.
-    \]
+\end{equation}
   \item Top-right block (index \((0,1)\)):
-    \[
-    B_{01} = \begin{bmatrix}50 & 52\\ 49 & 51\end{bmatrix},
+    \begin{equation}
+B_{01} = \begin{bmatrix}50 & 52\\ 49 & 51\end{bmatrix},
     \quad
     \text{sum}(B_{01})=202,
     \quad
     P(0,1)=50.5.
-    \]
+\end{equation}
   \item Bottom-left block (index \((1,0)\)):
-    \[
-    B_{10} = \begin{bmatrix}200 & 202\\ 198 & 199\end{bmatrix},
+    \begin{equation}
+B_{10} = \begin{bmatrix}200 & 202\\ 198 & 199\end{bmatrix},
     \quad
     \text{sum}(B_{10})=799,
     \quad
     P(1,0)=199.75.
-    \]
+\end{equation}
   \item Bottom-right block (index \((1,1)\)):
-    \[
-    B_{11} = \begin{bmatrix}150 & 151\\ 149 & 152\end{bmatrix},
+    \begin{equation}
+B_{11} = \begin{bmatrix}150 & 151\\ 149 & 152\end{bmatrix},
     \quad
     \text{sum}(B_{11})=602,
     \quad
     P(1,1)=150.5.
-    \]
+\end{equation}
 \end{itemize}
 
 Thus the pooled image \(P\) (size \(2\times2\)) becomes:
-\[
+\begin{equation}
 P = \begin{bmatrix}
 100.25 & 50.5 \\
 199.75 & 150.5
 \end{bmatrix}.
-\]
+\end{equation}
 
 Next, we compute the full-size residual map \(R\) by subtracting corresponding block means from each pixel:
 
 Top-left residuals for block \(B_{00}\):
-\[
+\begin{equation}
 \begin{array}{cc}
 R(0,0)=-0.25, & R(0,1)=1.75,\\[4pt]
 R(1,0)=-2.25,  & R(1,1)=0.75.
 \end{array}
-\]
+\end{equation}
 
 Top-right residuals for \(B_{01}\):
-\[
-\begin{array}{cc}
-R(0,2)=-0.5, & R(0,3)=1.5,\\[4pt]
-R(1,2)=-1.5,  & R(1,3)=0.5.
-\end{array}
-\]
+\begin{equation}
+\begin{aligned}
+R(0,2) &= -0.5, & R(0,3) &= 1.5, \\
+R(1,2) &= -1.5, & R(1,3) &= 0.5.
+\end{aligned}
+\end{equation}
 
 Bottom-left residuals for \(B_{10}\):
-\[
+\begin{equation}
 \begin{array}{cc}
 R(2,0)=0.25, & R(2,1)=2.25,\\[4pt]
 R(3,0)=-1.75, & R(3,1)=-0.75.
 \end{array}
-\]
+\end{equation}
 
 Bottom-right residuals for \(B_{11}\):
-\[
-\begin{array}{cc}
-R(2,2)=-0.5, & R(2,3)=0.5,\\[4pt]
-R(3,2)=-1.5,  & R(3,3)=1.5.
-\end{array}
-\]
+\begin{equation}
+\begin{aligned}
+R(2,2) &= -0.5, & R(2,3) &= 0.5, \\
+R(3,2) &= -1.5, & R(3,3) &= 1.5.
+\end{aligned}
+\end{equation}
 
 Collecting these entries yields the residual matrix:
-\[
+\begin{equation}
 R =
 \begin{bmatrix}
 -0.25 & 1.75  & -0.5 & 1.5 \\
@@ -295,7 +297,7 @@ R =
 0.25  & 2.25  & -0.5 & 0.5 \\
 -1.75 & -0.75 & -1.5 & 1.5
 \end{bmatrix}.
-\]
+\end{equation}
 
 \subsection{Phase 2: Residual Permutation for Security}
 
@@ -332,17 +334,17 @@ A major security issue arises when the residual image $R$, without being permute
 
 \begin{itemize}
     \item \textbf{Seed generation}: A unique seed $s$ is computed from the pixel intensities of the pooled image as:
-\[
+\begin{equation}
 s = \left( \sum_{i=1}^{M} \sum_{j=1}^{N} P(i,j) \right) \bmod 2^{32}
-\]
+\end{equation}
 This seed initializes a random number generator, ensuring that the permutation is image-dependent and reproducible only after reconstructing the pooled image from all secret shares.
 
 \item \textbf{Permutation:}
 Let the flattened residual vector be $R_f = [r_0, r_1, \dots, r_{N-1}]$ where $N = M \times N$.  
 A random permutation vector $\pi = [\pi(0), \pi(1), \dots, \pi(N-1)]$ is generated, and the permuted residuals are obtained as:
-\[
+\begin{equation}
 R'_f[i] = R_f[\pi(i)], \quad \forall i \in [0, N-1]
-\]
+\end{equation}
 Finally, $R'_f$ is reshaped to form the permuted residual matrix $R'$.
 
 \end{itemize}
@@ -352,9 +354,9 @@ This process provides the benefit of implicitly securing the permutation key, th
 \subsection{Phase 3: Cyclic XOR-Based Shadow Construction}
 
 This stage uses the XOR-based SIS method, where the cyclic XOR operations are employed to create the shadow images. This is done by taking advantage of the basic property of the XOR operation, which is its own inverse, as expressed below:
-\[
+\begin{equation}
 A \oplus B \oplus B = A
-\]
+\end{equation}
 
 This property ensures that when two XOR operations are carried out using the same operand, the presence of the operand is completely eliminated. Therefore, it becomes possible to divide the information into several shadow images, where each shadow image holds a part of the total information, and the original pooled image $P$ can only be reconstructed if all $n$ shadow images are obtained.
 
@@ -395,14 +397,16 @@ $SI_n \gets B_{n-1} \oplus I_s$\;
 Let $I_s = P$ be the pooled image formed after the average pooling phase, with a size of $\frac{N}{s} \times \frac{N}{s}$. To form the $n$ shadow images, the dealer first creates $n-1$ random matrices $\{B_1, B_2, \ldots, B_{n-1}\}$ of the same size as $I_s$. Each $B_i$ is populated with random grayscale values uniformly distributed between the range $[0, 255]$, thus removing any recognizable pattern of the original image.
 
 The shadow images $\{SI_1, SI_2, \ldots, SI_n\}$ are created through a cyclic XOR operation sequence. The dealer first assigns the first random matrix as the first shadow image and then applies a cyclic XOR operation between consecutive random matrices to form the subsequent shadow images. The last shadow image combines the last random matrix with the pooled image, thus hiding the secret message inside the cyclic XOR operation chain. The expression for the resulting formulation is as follows:
-\begin{align}
-SI_1 &= B_1 \nonumber \\
-SI_2 &= B_1 \oplus B_2 \nonumber \\
-SI_3 &= B_2 \oplus B_3 \nonumber \\
-&\vdots \nonumber \\
-SI_{n-1} &= B_{n-2} \oplus B_{n-1} \nonumber \\
-SI_n &= B_{n-1} \oplus I_s \nonumber
-\end{align}
+\begin{equation}
+\begin{aligned}
+SI_1 &= B_1 \\
+SI_2 &= B_1 \oplus B_2 \\
+SI_3 &= B_2 \oplus B_3 \\
+&\vdots \\
+SI_{n-1} &= B_{n-2} \oplus B_{n-1} \\
+SI_n &= B_{n-1} \oplus I_s
+\end{aligned}
+\end{equation}
 
 A pseudocode implementation of this is shown in Algorithm \ref{alg:cyclic_xor}. The shadow images are of the same size as the pooled image of $\frac{N}{s} \times \frac{N}{s}$, which is 75\% smaller than the original secret image in the case of K=s=2.
 
