@@ -32,7 +32,7 @@ where $R_{ij}$ captures the deviation between original pixel value $I_{ij}$ and 
 
 \subsection{XOR-Based Secret Sharing}
 
-The XOR operation has perfect diffusion, meaning that if one of the operands is random, the result is indistinguishable from random. We give a brief overview of the $(n,n)$ SIS scheme given by Wang et al.~\cite{wang2007two}. The dealer $D$ creates $n-1$ random matrices for the $(n,n)$ threshold schemes:
+The XOR operation has perfect diffusion, meaning that if one of the operands is random, the result is indistinguishable from random. We give a brief overview of the $(n,n)$ SIS scheme given by Wang et al.~\cite{wang2007}. The dealer $D$ creates $n-1$ random matrices for the $(n,n)$ threshold schemes:
 \[\{B_1, B_2, \dots, B_{n-1}\}\]
 Each of these matrices has the same dimensions as the secret image.
 
@@ -67,17 +67,17 @@ I'_s = SI_1 \oplus SI_2 \oplus \dots \oplus SI_n
 \label{sec:lad-litreview}
 
 
-XOR-based SIS methods were developed as computationally efficient alternatives to complex cryptographic protocols. Initial research by Wang et al.~\cite{wang2007two} introduced $(n, n)$ SIS schemes in which dealers produce $(n-1)$ random matrices by computing the $n$-th share via the XOR operation of the last random matrix and the image. Share reconstruction is achieved by XORing all $n$ shares. Although removing pixel expansion and preserving perfect contrast for binary, grayscale, and color images, shadow dimensions are equal to the original images.
+XOR-based SIS methods were developed as computationally efficient alternatives to complex cryptographic protocols. Initial research by Wang et al.~\cite{wang2007} introduced $(n, n)$ SIS schemes in which dealers produce $(n-1)$ random matrices by computing the $n$-th share via the XOR operation of the last random matrix and the image. Share reconstruction is achieved by XORing all $n$ shares. Although removing pixel expansion and preserving perfect contrast for binary, grayscale, and color images, shadow dimensions are equal to the original images.
 
-Later research by Chattopadhyay et al.~\cite{chattopadhyay2018verifiable} incorporated hash verification in $(n,n)$ arrangements, allowing participants to verify tampered shares before reconstruction. Although flexible when adding more shares, conventional arrangements retain the same shadow dimensions as the original images.
+Later research by Chattopadhyay et al.~\cite{chattopadhyay2018} incorporated hash verification in $(n,n)$ arrangements, allowing participants to verify tampered shares before reconstruction. Although flexible when adding more shares, conventional arrangements retain the same shadow dimensions as the original images.
 
-Chen and Wu~\cite{chen2014secure,chen2011efficient} built various Multiple SIS (MSIS) schemes using Boolean operations for encoding multiple secrets into the same share sets, but with unchanged shadow dimensions. In later studies, they added more randomness to avoid partial information leakage from sub-threshold sets, but with shadows still having original dimensions. Another study by Nag et al.~\cite{nag2020efficient} suggested Boolean MSIS schemes with individual shares expanded to $t \times r \times c$ depending on the number of secret images and the matrix arrangement. Deshmukh et al.~\cite{b24} introduced a Chinese Remainder Theorem (CRT) method for multiple color image sharing with shadows of original sizes.
+Chen and Wu~\cite{chen2014,chen2011} built various Multiple SIS (MSIS) schemes using Boolean operations for encoding multiple secrets into the same share sets, but with unchanged shadow dimensions. In later studies, they added more randomness to avoid partial information leakage from sub-threshold sets, but with shadows still having original dimensions. Another study by Nag et al.~\cite{nag2020} suggested Boolean MSIS schemes with individual shares expanded to $t \times r \times c$ depending on the number of secret images and the matrix arrangement. Deshmukh et al.~\cite{deshmukh2017} introduced a Chinese Remainder Theorem (CRT) method for multiple color image sharing with shadows of original sizes.
 
-Prasetyo and Hsia~\cite{prasetyo2019improved} improved multiple secret sharing using generalized chaotic image scrambling, which combined XOR operations with hyperchaotic maps for enhanced security with reconstruction issues for odd secret numbers, but with shadows still having original dimensions. In another study~\cite{prasetyo2019lossless}, they developed lossless progressive schemes for incremental quality improvement with additional shares. Guo et al.~\cite{guo2016multi} suggested multi-threshold schemes using generalized CRT with shadows of original sizes.
+Prasetyo and Hsia~\cite{prasetyo2019improved} improved multiple secret sharing using generalized chaotic image scrambling, which combined XOR operations with hyperchaotic maps for enhanced security with reconstruction issues for odd secret numbers, but with shadows still having original dimensions. In another study~\cite{prasetyo2019lossless}, they developed lossless progressive schemes for incremental quality improvement with additional shares. Guo et al.~\cite{guo2016} suggested multi-threshold schemes using generalized CRT with shadows of original sizes.
 
-Kabirirad and Eslami~\cite{kabirirad2018t} generalized MSIS to $(t,n)$-threshold schemes using Boolean operations, allowing flexibility where $t$ out of $n$ shares are needed for reconstruction. But this method needs $t$ consecutive shares for backtracking recovery, where the absence of any single share will disrupt the chain, and shadows retain original size. Faraoun~\cite{b114} designed highly secure $(n,n)$ multi-SIS schemes using cryptographic hash functions and stream ciphers, encrypting secrets with random session keys, then splitting keys using XOR chaining between $n$ shares, producing shadows of original size. Lin et al.~\cite{lin2024secret} designed key-free SIS schemes using improved Cycling-XOR techniques, embedding shares into separate cover images for better concealment, also producing shadows of original size.
+Kabirirad and Eslami~\cite{kabirirad2018t} generalized MSIS to $(t,n)$-threshold schemes using Boolean operations, allowing flexibility where $t$ out of $n$ shares are needed for reconstruction. But this method needs $t$ consecutive shares for backtracking recovery, where the absence of any single share will disrupt the chain, and shadows retain original size. Faraoun~\cite{faraoun2020} designed highly secure $(n,n)$ multi-SIS schemes using cryptographic hash functions and stream ciphers, encrypting secrets with random session keys, then splitting keys using XOR chaining between $n$ shares, producing shadows of original size. Lin et al.~\cite{lin2024} designed key-free SIS schemes using improved Cycling-XOR techniques, embedding shares into separate cover images for better concealment, also producing shadows of original size.
 
-Few studies focus on minimizing shadow size in XOR and Boolean schemes. Ou et al.~\cite{ou2015userfriendly} designed user-friendly secret-image sharing schemes using block truncation coding and error diffusion, resulting in shares $\frac{1}{4}$ smaller than originals, yet still meaningful. Research by Purushothama~\cite{10973763} described dimensional reduction where, instead of the usual $(n,n)$-threshold XOR schemes producing shares of size $h \times w$, their scheme produces shadows of size $\lceil h/n \rceil \times w$, greatly enhancing storage space efficiency.
+Few studies focus on minimizing shadow size in XOR and Boolean schemes. Ou et al.~\cite{ou2015userfriendly} designed user-friendly secret-image sharing schemes using block truncation coding and error diffusion, resulting in shares $\frac{1}{4}$ smaller than originals, yet still meaningful. Research by Purushothama~\cite{purushothama2024} described dimensional reduction where, instead of the usual $(n,n)$-threshold XOR schemes producing shares of size $h \times w$, their scheme produces shadows of size $\lceil h/n \rceil \times w$, greatly enhancing storage space efficiency.
 
 The literature review shows that, although XOR-based methods are simple and computationally efficient, they always produce shadows with the same dimensions as the original image ($n \times n$), which results in high redundancy and storage costs. The focus of research has been on improving security, but not on the limitations of storage efficiency. This chapter proposes to maintain the advantages of lightweight and lossless XOR operations while significantly reducing the shadow size by using pooling-based dimensional reduction and permutation techniques based on images.
 
@@ -727,16 +727,16 @@ The performance of the proposed pooling-based XOR SIS approach is compared with 
 \toprule
 \textbf{Schemes} & \textbf{Lossless recovery} & \textbf{Share type} & \textbf{Access structure} & \textbf{Share size} \\ 
 \midrule
-Wang \textit{et al.}~\cite{wang2007two} scheme-2 & yes & meaningless & (n, n) & $n \times n$ \\
-Chen–Wu~\cite{chen2011efficient,chen2014secure} & yes & meaningless & (n, n) & $n \times n$ \\
-Lin \textit{et al.}~\cite{lin2024secret} & yes & meaningless & (n, n) & $n \times n$ \\
-Guo \textit{et al.}~\cite{guo2016multi} & yes & meaningless & (t, n) & $n \times n$ \\
+Wang \textit{et al.}~\cite{wang2007} scheme-2 & yes & meaningless & (n, n) & $n \times n$ \\
+Chen–Wu~\cite{chen2011,chen2014} & yes & meaningless & (n, n) & $n \times n$ \\
+Lin \textit{et al.}~\cite{lin2024} & yes & meaningless & (n, n) & $n \times n$ \\
+Guo \textit{et al.}~\cite{guo2016} & yes & meaningless & (t, n) & $n \times n$ \\
 Prasetyo-Hsia~\cite{prasetyo2019lossless} & conditional & meaningless & (n, n) progressive & $n \times n$ \\
-Chattopadhyay \textit{et al.}~\cite{chattopadhyay2018verifiable} & yes & meaningless & (n, n) & $n \times n$ \\
-Faraoun~\cite{b114} & yes & meaningless & (n, n) & $n \times n$ \\
+Chattopadhyay \textit{et al.}~\cite{chattopadhyay2018} & yes & meaningless & (n, n) & $n \times n$ \\
+Faraoun~\cite{faraoun2020} & yes & meaningless & (n, n) & $n \times n$ \\
 Chattopadhyay \textit{et al.}~\cite{chattopadhyay2022efficient} & yes & meaningless & (t, n) & $n \times n$ \\
 Kabirirad-Eslami~\cite{kabirirad2018t,kabirirad2019verifiable} & yes & meaningless & (t, n) & $n \times n$ \\
-Soreng and Kandar~\cite{soreng2023verifiable} & yes & meaningless & (t, n) & $n \times n$ \\ 
+Soreng and Kandar~\cite{soreng2023} & yes & meaningless & (t, n) & $n \times n$ \\ 
 \midrule
 \textbf{Our proposed method} & \textbf{yes} & \textbf{meaningless} & \textbf{(n, n)} & $\bm{\frac{n}{4} \times \frac{n}{4}}$ \\
 \bottomrule
