@@ -20,8 +20,9 @@ The results demonstrate that the scheme is fundamentally insecure in spite of po
 
 % ------------------------------------------------------------
 \section{Preliminaries}
+\label{sec:ch2-prelim}
 % ------------------------------------------------------------
-This section introduces the foundational concepts and theoretical background required to understand the log-based anomaly detection methodology developed in this work. Each concept is explained from first principles before the formal mathematical notation is presented. The three main areas covered are: log representation and anomaly formulation, token embedding and representation learning, and the self-attention mechanism.
+This section introduces the foundational concepts and theoretical background required to understand the cryptanalysis presented in this chapter. It covers chaos-based image encryption schemes, the permutation-diffusion architecture, and the chosen-plaintext attack model used to break the target scheme.
 
 \subsection{Chaos-Based Image Encryption}
 
@@ -75,6 +76,7 @@ where $\theta \in (0, 1)$ is a coupling parameter that governs the balance betwe
 
 % ------------------------------------------------------------
 \subsection{Cryptanalysis of Image Encryption Schemes}
+\label{sec:ch2-cpa}
 % ------------------------------------------------------------
 
 \textbf{Cryptanalysis} is the science of analysing encryption schemes to identify weaknesses that allow an adversary to recover plaintext or the secret key without legitimate authorisation. In the context of image encryption, successful cryptanalysis corresponds to recovering the original image from its encrypted form. Different attack models assume varying levels of adversary capability, and this work focuses on the strongest standard model used in symmetric cryptography.
@@ -89,6 +91,7 @@ An encryption scheme is therefore fully breakable under a chosen-plaintext attac
 
 % ------------------------------------------------------------
 \section{Literature Review}
+\label{sec:ch2-litreview}
 % ------------------------------------------------------------
 
 Chaos-based image encryption has been extensively studied owing to its ability to achieve strong confusion and diffusion properties through nonlinear dynamical systems. The foundational permutation-diffusion architecture was introduced by \\ Fridrich~\cite{fridrich1998symmetric}, in which chaotic maps drive both the spatial scrambling and the value transformation of pixels. This two-phase design has since become the dominant paradigm in the field: the permutation phase disrupts spatial correlations among adjacent pixels, while the diffusion phase ensures that local changes in the plaintext propagate globally across the ciphertext.
@@ -104,6 +107,7 @@ The scheme proposed by Jain et al.~\cite{jain2021medical}, which combines Arnold
 The present work builds directly upon these observations. By recovering the equivalent keystream through encryption of an all-zero image and reconstructing the full permutation mapping using structured probe images, it is shown that the encryption process can be completely inverted without any knowledge of the secret key. This result underscores the persistent gap between statistical security evaluation and genuine cryptographic robustness, and reinforces the need for principled cryptanalysis---rather than statistical testing alone---in the assessment of chaos-based image encryption schemes.
 % ------------------------------------------------------------
 \section{Work Done}
+\label{sec:ch2-work}
 % ------------------------------------------------------------
 
 This work presents a complete cryptanalysis of the chaos-based medical image encryption scheme proposed by Jain et al.~\cite{jain2021medical}. The scheme employs a two-round permutation-diffusion structure using Arnold's Cat Map and a Two-Dimensional Logistic Sine Coupling Map (2D-LSCM). It is demonstrated that this structure provides no actual resistance against a chosen-plaintext adversary: both the equivalent keystream and the full permutation mapping can be extracted with a small number of oracle queries, after which any ciphertext may be decrypted without knowledge of the secret key.
