@@ -221,6 +221,6 @@ Shadow 1 & Shadow 2 & Shadow 3 & Shadow 4 \\
 
 This work presents an autoencoder-based Secret Image Sharing (SIS) scheme that leverages deep learning for secure and storage-efficient image distribution. The proposed method encodes images into a compact latent representation and divides it into multiple independent shares, ensuring that no single share reveals meaningful information about the original image.
 
-The experimental results demonstrate that the model achieves high reconstruction quality, with PSNR values above 30 dB and SSIM values close to 1.0. At the same time, individual shares exhibit very low similarity to the original image, confirming strong confidentiality. A major advantage of the approach is the significant reduction in storage requirements, achieving up to 98\% compression compared to the original image size.
+The model achieves high reconstruction quality ($\mathrm{PSNR} > 30\,\mathrm{dB}$, $\mathrm{SSIM} \approx 1.0$), while individual shares remain dissimilar to the original, ensuring strong confidentiality. It also reduces storage by up to $98\%$.
 
 However, the method introduces minor reconstruction loss due to the lossy nature of latent space compression. Despite this, the overall performance indicates that autoencoder-based SIS is an effective alternative to traditional schemes, offering a balance between security, compression, and reconstruction quality.
