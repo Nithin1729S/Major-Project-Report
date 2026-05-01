@@ -63,7 +63,7 @@ Overall, while XOR-based SIS schemes offer simplicity and efficiency, most appro
 \section{Work Done}
 \label{sec:lad-work}
 
-An autoencoder-based Secret Image Sharing (SIS) scheme is implemented using a deep convolutional architecture for grayscale images. The system encodes an input image into a compact latent representation and divides it into multiple independent shares. Each share contains partial information, and reconstruction is possible only when all shares are combined.
+An autoencoder-based Secret Image Sharing (SIS) scheme is implemented using a deep convolutional architecture for grayscale images. The system encodes an input image into a compact latent representation and divides it into multiple independent shares. Each share contains partial information, and reconstruction is possible only when all shares are combined. Figure~\ref{fig:autoencoder_sis} illustrates the complete framework.
 
 \begin{figure}[htbp]
 \centering
@@ -193,7 +193,7 @@ The original image size is $128 \times 128 = 16384$ pixels, which corresponds to
 
 \subsection{Analysis Summary}
 
-The proposed method achieves high reconstruction quality with strong structural similarity, ensures security by preventing information leakage from individual shares, and significantly reduces storage requirements. However, the reconstruction is not perfectly lossless due to compression in the latent space, which introduces minor smoothing artifacts in the reconstructed images.
+The proposed method achieves high reconstruction quality with strong structural similarity, ensures security by preventing information leakage from individual shares, and significantly reduces storage requirements. However, the reconstruction is not perfectly lossless due to compression in the latent space, which introduces minor smoothing artifacts in the reconstructed images. Figure~\ref{fig:results_autoencoder} shows the visual reconstruction results alongside the generated shares.
 
 \begin{figure}[htbp]
 \centering
